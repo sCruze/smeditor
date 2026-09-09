@@ -1,5 +1,10 @@
 # Changelog — smeditor
 
+## 0.2.2 — 2026-09-09
+
+- Fixed caret jumps and reordered typing inside the Rails Shadow DOM editor. The core now resolves the live DOM Selection from the editor's own root instead of always using `document.getSelection()`.
+- Selection restore and caret coordinate ranges now use the editor element's owner document, keeping the DOM integration correct in isolated roots and embedded documents.
+
 ## 0.2.1 — 2026-09-09
 
 - Rails editor now renders inside Shadow DOM so host application CSS cannot alter the SMEditor toolbar or editing surface.

@@ -188,12 +188,12 @@ class Editor implements EditorInstance {
   coordsAtPoint(
     point: SelectionPoint,
   ): { top: number; left: number; height: number } | null {
-    if (!this.element || typeof document === "undefined") return null;
+    if (!this.element) return null;
     const deep = this.options.deepSelection ?? false;
     const loc = domNodeFromPoint(point, this.element, deep);
     if (!loc) return null;
     try {
-      const range = document.createRange();
+      const range = this.element.ownerDocument.createRange();
       const offset = Math.min(loc.offset, lengthOf(loc.node));
       range.setStart(loc.node, offset);
       range.collapse(true);
@@ -658,8 +658,7 @@ class Editor implements EditorInstance {
 
   private syncSelectionFromDOM(): void {
     if (this.updatingDOM || !this.element) return;
-    if (typeof document === "undefined") return;
-    const domSel = document.getSelection();
+    const domSel = selectionForElement(this.element);
     if (!domSel) return;
     if (!this.element.contains(domSel.anchorNode)) return;
     const next = this.readSelectionFromDOM();
@@ -677,8 +676,8 @@ class Editor implements EditorInstance {
   }
 
   private readSelectionFromDOM(): EditorSelection | null {
-    if (!this.element || typeof document === "undefined") return null;
-    const sel = document.getSelection();
+    if (!this.element) return null;
+    const sel = selectionForElement(this.element);
     if (!sel || sel.rangeCount === 0) return null;
     const deep = this.options.deepSelection ?? false;
     const anchor = pointFromDOM(
@@ -707,10 +706,10 @@ class Editor implements EditorInstance {
   }
 
   private applySelectionToDOM(): void {
-    if (!this.selection || !this.element || typeof document === "undefined") {
+    if (!this.selection || !this.element) {
       return;
     }
-    const sel = document.getSelection();
+    const sel = selectionForElement(this.element);
     if (!sel) return;
     const deep = this.options.deepSelection ?? false;
     const anchorNode = domNodeFromPoint(
@@ -721,7 +720,7 @@ class Editor implements EditorInstance {
     const headNode = domNodeFromPoint(this.selection.head, this.element, deep);
     if (!anchorNode || !headNode) return;
     try {
-      const range = document.createRange();
+      const range = this.element.ownerDocument.createRange();
       range.setStart(
         anchorNode.node,
         Math.min(anchorNode.offset, lengthOf(anchorNode.node)),
@@ -790,6 +789,33 @@ class Editor implements EditorInstance {
 // ============================================================================
 // Helpers (module-private)
 // ============================================================================
+
+/**
+ * Return the Selection object that actually owns the editor caret.
+ *
+ * `document.getSelection()` is not sufficient for editors mounted inside an
+ * open ShadowRoot: Chromium exposes a composed selection on the document whose
+ * anchor can be the shadow host instead of the text node inside the editor.
+ * Reading that selection produces a null/wrong editor position; the next DOM
+ * render then loses the caret (most visibly when typing spaces).
+ *
+ * Both Document and Chromium's ShadowRoot expose getSelection(). Prefer the
+ * editor's root and fall back to its owner document for browsers that do not
+ * expose ShadowRoot#getSelection.
+ */
+function selectionForElement(element: HTMLElement): Selection | null {
+  const root = element.getRootNode?.();
+  const rootedGetSelection = (root as {
+    getSelection?: () => Selection | null;
+  } | null)?.getSelection;
+
+  if (root && typeof rootedGetSelection === "function") {
+    const selection = rootedGetSelection.call(root);
+    if (selection) return selection;
+  }
+
+  return element.ownerDocument?.getSelection?.() ?? null;
+}
 
 /**
  * Strip noise and unsafe elements from pasted HTML.

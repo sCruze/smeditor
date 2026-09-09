@@ -763,14 +763,14 @@ class Editor {
      */
     coordsAtPoint(point) {
         var _a;
-        if (!this.element || typeof document === "undefined")
+        if (!this.element)
             return null;
         const deep = (_a = this.options.deepSelection) !== null && _a !== void 0 ? _a : false;
         const loc = domNodeFromPoint(point, this.element, deep);
         if (!loc)
             return null;
         try {
-            const range = document.createRange();
+            const range = this.element.ownerDocument.createRange();
             const offset = Math.min(loc.offset, lengthOf(loc.node));
             range.setStart(loc.node, offset);
             range.collapse(true);
@@ -1243,9 +1243,7 @@ class Editor {
         var _a, _b;
         if (this.updatingDOM || !this.element)
             return;
-        if (typeof document === "undefined")
-            return;
-        const domSel = document.getSelection();
+        const domSel = selectionForElement(this.element);
         if (!domSel)
             return;
         if (!this.element.contains(domSel.anchorNode))
@@ -1267,9 +1265,9 @@ class Editor {
     }
     readSelectionFromDOM() {
         var _a;
-        if (!this.element || typeof document === "undefined")
+        if (!this.element)
             return null;
-        const sel = document.getSelection();
+        const sel = selectionForElement(this.element);
         if (!sel || sel.rangeCount === 0)
             return null;
         const deep = (_a = this.options.deepSelection) !== null && _a !== void 0 ? _a : false;
@@ -1290,10 +1288,10 @@ class Editor {
     }
     applySelectionToDOM() {
         var _a;
-        if (!this.selection || !this.element || typeof document === "undefined") {
+        if (!this.selection || !this.element) {
             return;
         }
-        const sel = document.getSelection();
+        const sel = selectionForElement(this.element);
         if (!sel)
             return;
         const deep = (_a = this.options.deepSelection) !== null && _a !== void 0 ? _a : false;
@@ -1302,7 +1300,7 @@ class Editor {
         if (!anchorNode || !headNode)
             return;
         try {
-            const range = document.createRange();
+            const range = this.element.ownerDocument.createRange();
             range.setStart(anchorNode.node, Math.min(anchorNode.offset, lengthOf(anchorNode.node)));
             range.setEnd(headNode.node, Math.min(headNode.offset, lengthOf(headNode.node)));
             sel.removeAllRanges();
@@ -1353,6 +1351,30 @@ class Editor {
 // ============================================================================
 // Helpers (module-private)
 // ============================================================================
+/**
+ * Return the Selection object that actually owns the editor caret.
+ *
+ * `document.getSelection()` is not sufficient for editors mounted inside an
+ * open ShadowRoot: Chromium exposes a composed selection on the document whose
+ * anchor can be the shadow host instead of the text node inside the editor.
+ * Reading that selection produces a null/wrong editor position; the next DOM
+ * render then loses the caret (most visibly when typing spaces).
+ *
+ * Both Document and Chromium's ShadowRoot expose getSelection(). Prefer the
+ * editor's root and fall back to its owner document for browsers that do not
+ * expose ShadowRoot#getSelection.
+ */
+function selectionForElement(element) {
+    var _a, _b, _c, _d;
+    const root = (_a = element.getRootNode) === null || _a === void 0 ? void 0 : _a.call(element);
+    const rootedGetSelection = root === null || root === void 0 ? void 0 : root.getSelection;
+    if (root && typeof rootedGetSelection === "function") {
+        const selection = rootedGetSelection.call(root);
+        if (selection)
+            return selection;
+    }
+    return (_d = (_c = (_b = element.ownerDocument) === null || _b === void 0 ? void 0 : _b.getSelection) === null || _c === void 0 ? void 0 : _c.call(_b)) !== null && _d !== void 0 ? _d : null;
+}
 /**
  * Strip noise and unsafe elements from pasted HTML.
  *
