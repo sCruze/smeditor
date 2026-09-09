@@ -495,6 +495,125 @@ function buildToolbar(editor: EditorInstance, kit: string, uploadUrl?: string): 
   return toolbar;
 }
 
+function selectionForSurface(surface: HTMLElement): Selection | null {
+  const root = surface.getRootNode?.();
+  const getSelection = (root as { getSelection?: () => Selection | null } | null)?.getSelection;
+  if (root && typeof getSelection === "function") {
+    const selection = getSelection.call(root);
+    if (selection) return selection;
+  }
+  return surface.ownerDocument?.getSelection?.() ?? null;
+}
+
+/**
+ * Rails uses a dependency-free browser adapter rather than the React package,
+ * so contextual UI that exists in the playground must be mounted explicitly.
+ * This mirrors React's <BubbleMenu />: selecting non-empty text opens a small
+ * formatting toolbar above the live DOM range.
+ */
+function buildBubbleMenu(editor: EditorInstance, surface: HTMLElement): HTMLDivElement {
+  const menu = document.createElement("div");
+  menu.className = "smeditor-floating smeditor-bubble-menu";
+  menu.setAttribute("role", "toolbar");
+  menu.setAttribute("aria-label", "Selected text formatting");
+  menu.style.position = "fixed";
+  menu.style.display = "none";
+  menu.style.zIndex = "2147483000";
+
+  const buttons = [
+    commandButton(editor, "bold", "Bold", () => run(editor, "toggleBold"), () => editor.isActive("bold")),
+    commandButton(editor, "italic", "Italic", () => run(editor, "toggleItalic"), () => editor.isActive("italic")),
+    commandButton(editor, "underline", "Underline", () => run(editor, "toggleUnderline"), () => editor.isActive("underline")),
+    commandButton(editor, "strike", "Strike-through", () => run(editor, "toggleStrike"), () => editor.isActive("strike")),
+    commandButton(editor, "link", "Link", () => {
+      if (editor.isActive("link")) return run(editor, "unsetLink");
+      const href = window.prompt("Link URL", "https://");
+      return href ? run(editor, "setLink", { href }) : false;
+    }, () => editor.isActive("link")),
+  ];
+  menu.append(...buttons);
+
+  // Keeping pointer-down inside the menu from focusing a button preserves the
+  // editor's text selection, which the formatting command needs.
+  menu.addEventListener("mousedown", (event) => event.preventDefault());
+
+  let frame = 0;
+  const hide = () => {
+    menu.style.display = "none";
+    menu.style.visibility = "hidden";
+  };
+  const updateNow = () => {
+    frame = 0;
+    if (surface.getAttribute("contenteditable") === "false") return hide();
+
+    const selection = selectionForSurface(surface);
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return hide();
+
+    const range = selection.getRangeAt(0);
+    if (!surface.contains(range.commonAncestorContainer)) return hide();
+
+    const anchor = range.getBoundingClientRect();
+    if (anchor.width === 0 && anchor.height === 0) return hide();
+
+    for (const button of buttons) (button as any).__smeditorRefresh?.();
+
+    // Make it measurable off-screen, then place it before the next paint.
+    menu.style.display = "inline-flex";
+    menu.style.visibility = "hidden";
+    menu.style.left = "-9999px";
+    menu.style.top = "-9999px";
+
+    const rect = menu.getBoundingClientRect();
+    const margin = 8;
+    const offset = 8;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let left = anchor.left + anchor.width / 2 - rect.width / 2;
+    left = Math.max(margin, Math.min(left, viewportWidth - rect.width - margin));
+
+    let top = anchor.top - rect.height - offset;
+    if (top < margin) top = anchor.bottom + offset;
+    if (top + rect.height > viewportHeight - margin) {
+      top = Math.max(margin, anchor.top - rect.height - offset);
+    }
+
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.top = `${Math.round(top)}px`;
+    menu.style.visibility = "visible";
+  };
+  const scheduleUpdate = () => {
+    if (frame) cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(updateNow);
+  };
+
+  const selectionRoot = surface.getRootNode?.();
+  const selectionTarget = selectionRoot && selectionRoot !== document
+    ? selectionRoot as EventTarget
+    : null;
+
+  const disposeSelection = editor.on("selectionUpdate", scheduleUpdate);
+  document.addEventListener("selectionchange", scheduleUpdate);
+  selectionTarget?.addEventListener("selectionchange", scheduleUpdate);
+  surface.addEventListener("pointerup", scheduleUpdate);
+  surface.addEventListener("keyup", scheduleUpdate);
+  window.addEventListener("resize", scheduleUpdate);
+  window.addEventListener("scroll", scheduleUpdate, true);
+
+  (menu as any).__smeditorDispose = () => {
+    if (frame) cancelAnimationFrame(frame);
+    disposeSelection();
+    document.removeEventListener("selectionchange", scheduleUpdate);
+    selectionTarget?.removeEventListener("selectionchange", scheduleUpdate);
+    surface.removeEventListener("pointerup", scheduleUpdate);
+    surface.removeEventListener("keyup", scheduleUpdate);
+    window.removeEventListener("resize", scheduleUpdate);
+    window.removeEventListener("scroll", scheduleUpdate, true);
+  };
+
+  return menu;
+}
+
 function shadowRootFor(mount: SMMount): ShadowRoot {
   const root = mount.shadowRoot || mount.attachShadow({ mode: "open" });
   root.innerHTML = "";
@@ -553,11 +672,16 @@ function bootMount(mount: SMMount): void {
 
   const toolbar = buildToolbar(editor, kit, uploadUrl);
   shell.insertBefore(toolbar, surface);
+  const bubbleMenu = buildBubbleMenu(editor, surface);
+  root.appendChild(bubbleMenu);
   input.smeditorInstance = editor;
   mount.smeditorInstance = editor;
   mount.dataset.smeditorBooted = "1";
   instances.set(mount, editor);
-  disposers.set(mount, [() => (toolbar as any).__smeditorDispose?.()]);
+  disposers.set(mount, [
+    () => (toolbar as any).__smeditorDispose?.(),
+    () => (bubbleMenu as any).__smeditorDispose?.(),
+  ]);
 }
 
 export function boot(root: ParentNode = document): void {

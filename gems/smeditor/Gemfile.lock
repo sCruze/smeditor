@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    smeditor (0.2.3)
+    smeditor (0.2.4)
       rails (>= 7.0, < 9.0)
 
 GEM

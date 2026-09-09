@@ -1,5 +1,11 @@
 # Changelog — smeditor
 
+## 0.2.4 — 2026-09-09
+
+- Added the selected-text bubble formatting toolbar to the self-contained Rails adapter, matching the playground behavior.
+- Bubble toolbar positioning and selection tracking now work inside the Rails Shadow DOM and stay visible across scroll/resize.
+- Core selection syncing now also listens on the editor ShadowRoot when available.
+
 ## 0.2.3
 
 - Added configurable responsive minimum editor heights for desktop, tablet, and mobile.
