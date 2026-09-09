@@ -1,0 +1,393 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: var(--sme-color-surface-muted);
+  color: var(--sme-color-text);
+  font-family: var(--sme-font-sans);
+}
+
+.playground {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* ===========================================================================
+ * Header
+ * ======================================================================== */
+
+.playground__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sme-space-3);
+  padding: var(--sme-space-3) var(--sme-space-4);
+  border-bottom: 1px solid var(--sme-color-border);
+  background: var(--sme-color-surface);
+  flex-wrap: wrap;
+}
+
+.playground__header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.playground__tag {
+  font-size: var(--sme-text-sm);
+  color: var(--sme-color-text-muted);
+}
+
+.playground__spacer {
+  flex: 1;
+}
+
+.playground__mode-toggle {
+  display: inline-flex;
+  background: var(--sme-color-surface-muted);
+  border: 1px solid var(--sme-color-border);
+  border-radius: var(--sme-radius-md);
+  padding: 2px;
+}
+
+.playground__mode-toggle button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: var(--sme-text-sm);
+  color: var(--sme-color-text-muted);
+  cursor: pointer;
+  border-radius: calc(var(--sme-radius-md) - 2px);
+  transition: background-color 80ms ease, color 80ms ease;
+}
+
+.playground__mode-toggle button[data-active="true"] {
+  background: var(--sme-color-surface);
+  color: var(--sme-color-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* ===========================================================================
+ * Just-editor mode — a tiny escape hatch in the top-right corner
+ * ======================================================================== */
+
+.playground__exit-pristine {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 100;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--sme-color-border);
+  background: var(--sme-color-surface);
+  color: var(--sme-color-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 100ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.playground__exit-pristine:hover {
+  opacity: 1;
+}
+
+/* ===========================================================================
+ * Grid layout
+ * ======================================================================== */
+
+.playground__grid {
+  flex: 1;
+  display: grid;
+  gap: var(--sme-space-4);
+  padding: var(--sme-space-4);
+}
+
+.playground--edit .playground__grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.playground--writer .playground__grid,
+.playground--just-editor .playground__grid {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.playground--writer .playground__editor,
+.playground--just-editor .playground__editor {
+  width: 100%;
+  max-width: 820px;
+}
+
+/* In Just-editor mode strip even the editor's outer chrome to keep the
+ * surface as plain as possible. We hide the toolbar wrapper via JS in
+ * the future; for now the toolbar is part of the surface and stays. */
+
+@media (max-width: 960px) {
+  .playground--edit .playground__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.playground__editor .smeditor {
+  background: var(--sme-color-surface);
+}
+
+/* Word / character counts under the editor */
+.playground__counts {
+  margin-top: var(--sme-space-2);
+  display: flex;
+  gap: var(--sme-space-2);
+  font-size: var(--sme-text-sm);
+  color: var(--sme-color-text-muted);
+  padding-left: var(--sme-space-1);
+}
+
+/* ===========================================================================
+ * Inspector panels
+ * ======================================================================== */
+
+.playground__inspector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sme-space-3);
+  min-height: 0;
+}
+
+.inspector {
+  background: var(--sme-color-surface);
+  border: 1px solid var(--sme-color-border);
+  border-radius: var(--sme-radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.inspector__title {
+  margin: 0;
+  padding: var(--sme-space-2) var(--sme-space-3);
+  background: var(--sme-color-surface-muted);
+  border-bottom: 1px solid var(--sme-color-border);
+  font-size: var(--sme-text-sm);
+  color: var(--sme-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.inspector__body {
+  padding: var(--sme-space-3);
+  overflow: auto;
+  font-family: var(--sme-font-mono);
+  font-size: 12px;
+}
+
+.inspector__body pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Comments panel ------------------------------------------------------- */
+.comments__empty {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.7;
+}
+.comments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.comments__thread {
+  border: 1px solid var(--sme-color-border, #d4d4d4);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.comments__thread.is-resolved {
+  opacity: 0.55;
+}
+.comments__message {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.comments__author {
+  font-weight: 600;
+  margin-right: 6px;
+}
+.comments__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.comments__actions .smeditor-button {
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+/* Iteration 10: playground scenarios, HTML input, commands diagnostics */
+.scenario-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sme-space-2);
+}
+
+.scenario-grid .smeditor-button[data-active="true"] {
+  border-color: var(--sme-color-primary, currentColor);
+  color: var(--sme-color-primary, currentColor);
+}
+
+.html-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sme-space-2);
+}
+
+.html-input textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 180px;
+  border: 1px solid var(--sme-color-border);
+  border-radius: var(--sme-radius-md);
+  background: var(--sme-color-surface);
+  color: var(--sme-color-text);
+  font: inherit;
+  font-family: var(--sme-font-mono);
+  font-size: 12px;
+  padding: var(--sme-space-2);
+  resize: vertical;
+}
+
+.html-input__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sme-space-2);
+}
+
+.playground-error {
+  margin: 0;
+  color: var(--sme-color-danger, #b91c1c);
+}
+
+.command-diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sme-space-2);
+}
+
+.command-diagnostics p {
+  margin: 0;
+}
+
+.command-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.command-list code,
+.command-diagnostics code {
+  border: 1px solid var(--sme-color-border);
+  border-radius: 999px;
+  background: var(--sme-color-surface-muted);
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.command-diagnostics code {
+  border-radius: var(--sme-radius-md);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Iteration 12: playground UI polish ------------------------------------ */
+.playground__header .smeditor-button:focus-visible,
+.playground__mode-toggle button:focus-visible,
+.html-input textarea:focus-visible,
+.inspector:focus-within {
+  outline: 2px solid var(--sme-color-focus);
+  outline-offset: 2px;
+}
+
+.playground__mode-toggle button:hover {
+  color: var(--sme-color-text);
+}
+
+.playground__mode-toggle button[data-active="true"] {
+  box-shadow: var(--sme-shadow-sm);
+}
+
+.playground__editor .smeditor {
+  box-shadow: var(--sme-shadow-sm);
+}
+
+.playground__counts span {
+  border: 1px solid var(--sme-color-border);
+  border-radius: 999px;
+  background: var(--sme-color-surface);
+  padding: 2px 8px;
+}
+
+.inspector {
+  box-shadow: var(--sme-shadow-sm);
+}
+
+.html-input textarea {
+  resize: vertical;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+.html-input textarea:focus-visible {
+  border-color: var(--sme-color-focus);
+}
+
+.playground-error {
+  border: 1px solid var(--sme-color-danger);
+  border-radius: var(--sme-radius-md);
+  background: var(--sme-color-danger-soft);
+  padding: var(--sme-space-2) var(--sme-space-3);
+}
+
+.command-list code,
+.command-diagnostics code {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .playground__header {
+    align-items: stretch;
+  }
+
+  .playground__spacer {
+    display: none;
+  }
+
+  .playground__mode-toggle {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .playground__mode-toggle button {
+    flex: 1 0 auto;
+    min-height: var(--sme-control-height);
+  }
+
+  .playground__grid {
+    padding: var(--sme-space-3);
+  }
+
+  .playground__counts {
+    flex-wrap: wrap;
+  }
+
+  .inspector__body {
+    max-height: 360px;
+  }
+}

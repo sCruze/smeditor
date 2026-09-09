@@ -1,0 +1,52 @@
+{
+  "name": "@smeditor/theme-default",
+  "version": "0.0.1",
+  "description": "Default CSS theme for SMEditor editor and toolbar.",
+  "license": "MIT",
+  "author": "SMEditor contributors",
+  "homepage": "https://github.com/sCruze/smeditor/tree/main/packages/theme-default#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sCruze/smeditor.git",
+    "directory": "packages/theme-default"
+  },
+  "bugs": {
+    "url": "https://github.com/sCruze/smeditor/issues"
+  },
+  "keywords": [
+    "smeditor",
+    "rich-text",
+    "editor",
+    "wysiwyg",
+    "contenteditable",
+    "css",
+    "theme"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./src/index.css",
+  "exports": {
+    ".": "./src/index.css",
+    "./index.css": "./src/index.css",
+    "./style.css": "./src/index.css",
+    "./tokens.css": "./src/tokens.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "echo 'theme-default is css-only, nothing to build'",
+    "clean": "echo 'nothing to clean'",
+    "typecheck": "echo 'no typescript here'"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@smeditor/example-vite-react",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Vite + React example covering FullKit, toolbar, images, tables and save output.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 3031",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 3031",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@smeditor/core": "workspace:*",
+    "@smeditor/extension-image": "workspace:*",
+    "@smeditor/full-kit": "workspace:*",
+    "@smeditor/react": "workspace:*",
+    "@smeditor/starter-kit": "workspace:*",
+    "@smeditor/theme-default": "workspace:*",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.0"
+  }
+}

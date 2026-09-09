@@ -1,0 +1,26 @@
+{
+  "name": "@smeditor/example-nextjs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Next.js app showing how to embed SMEditor.",
+  "scripts": {
+    "dev": "next dev -p 3030",
+    "build": "next build",
+    "start": "next start -p 3030"
+  },
+  "dependencies": {
+    "@smeditor/core": "workspace:*",
+    "@smeditor/react": "workspace:*",
+    "@smeditor/starter-kit": "workspace:*",
+    "@smeditor/theme-default": "workspace:*",
+    "next": "^14.2.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@smeditor/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@smeditor/collab": [
+        "./packages/collab/src/index.ts"
+      ],
+      "@smeditor/export-docx": [
+        "./packages/export-docx/src/index.ts"
+      ],
+      "@smeditor/export-pdf": [
+        "./packages/export-pdf/src/index.ts"
+      ],
+      "@smeditor/core/*": [
+        "./packages/core/src/*"
+      ],
+      "@smeditor/react": [
+        "./packages/react/src/index.tsx"
+      ],
+      "@smeditor/starter-kit": [
+        "./packages/starter-kit/src/index.ts"
+      ],
+      "@smeditor/full-kit": [
+        "./packages/full-kit/src/index.ts"
+      ],
+      "@smeditor/extension-bold": [
+        "./packages/extension-bold/src/index.ts"
+      ],
+      "@smeditor/extension-italic": [
+        "./packages/extension-italic/src/index.ts"
+      ],
+      "@smeditor/extension-underline": [
+        "./packages/extension-underline/src/index.ts"
+      ],
+      "@smeditor/extension-strike": [
+        "./packages/extension-strike/src/index.ts"
+      ],
+      "@smeditor/extension-heading": [
+        "./packages/extension-heading/src/index.ts"
+      ],
+      "@smeditor/extension-paragraph": [
+        "./packages/extension-paragraph/src/index.ts"
+      ],
+      "@smeditor/extension-history": [
+        "./packages/extension-history/src/index.ts"
+      ],
+      "@smeditor/extension-link": [
+        "./packages/extension-link/src/index.ts"
+      ],
+      "@smeditor/extension-blockquote": [
+        "./packages/extension-blockquote/src/index.ts"
+      ],
+      "@smeditor/extension-code-block": [
+        "./packages/extension-code-block/src/index.ts"
+      ],
+      "@smeditor/extension-hard-break": [
+        "./packages/extension-hard-break/src/index.ts"
+      ],
+      "@smeditor/extension-list-item": [
+        "./packages/extension-list-item/src/index.ts"
+      ],
+      "@smeditor/extension-bullet-list": [
+        "./packages/extension-bullet-list/src/index.ts"
+      ],
+      "@smeditor/extension-ordered-list": [
+        "./packages/extension-ordered-list/src/index.ts"
+      ],
+      "@smeditor/extension-task-list": [
+        "./packages/extension-task-list/src/index.ts"
+      ],
+      "@smeditor/extension-task-item": [
+        "./packages/extension-task-item/src/index.ts"
+      ],
+      "@smeditor/extension-text-align": [
+        "./packages/extension-text-align/src/index.ts"
+      ],
+      "@smeditor/extension-clear-formatting": [
+        "./packages/extension-clear-formatting/src/index.ts"
+      ],
+      "@smeditor/extension-placeholder": [
+        "./packages/extension-placeholder/src/index.ts"
+      ],
+      "@smeditor/extension-inline-code": [
+        "./packages/extension-inline-code/src/index.ts"
+      ],
+      "@smeditor/extension-horizontal-rule": [
+        "./packages/extension-horizontal-rule/src/index.ts"
+      ],
+      "@smeditor/extension-subscript": [
+        "./packages/extension-subscript/src/index.ts"
+      ],
+      "@smeditor/extension-superscript": [
+        "./packages/extension-superscript/src/index.ts"
+      ],
+      "@smeditor/extension-highlight": [
+        "./packages/extension-highlight/src/index.ts"
+      ],
+      "@smeditor/extension-text-color": [
+        "./packages/extension-text-color/src/index.ts"
+      ],
+      "@smeditor/extension-text-stroke": [
+        "./packages/extension-text-stroke/src/index.ts"
+      ],
+      "@smeditor/extension-background-color": [
+        "./packages/extension-background-color/src/index.ts"
+      ],
+      "@smeditor/extension-word-count": [
+        "./packages/extension-word-count/src/index.ts"
+      ],
+      "@smeditor/extension-indent": [
+        "./packages/extension-indent/src/index.ts"
+      ],
+      "@smeditor/extension-table": [
+        "./packages/extension-table/src/index.ts"
+      ],
+      "@smeditor/extension-font-family": [
+        "./packages/extension-font-family/src/index.ts"
+      ],
+      "@smeditor/extension-font-size": [
+        "./packages/extension-font-size/src/index.ts"
+      ],
+      "@smeditor/extension-line-height": [
+        "./packages/extension-line-height/src/index.ts"
+      ],
+      "@smeditor/extension-comment": [
+        "./packages/extension-comment/src/index.ts"
+      ],
+      "@smeditor/extension-mention": [
+        "./packages/extension-mention/src/index.ts"
+      ],
+      "@smeditor/extension-track-changes": [
+        "./packages/extension-track-changes/src/index.ts"
+      ],
+      "@smeditor/extension-markdown": [
+        "./packages/extension-markdown/src/index.ts"
+      ],
+      "@smeditor/extension-image": [
+        "./packages/extension-image/src/index.ts"
+      ],
+      "@smeditor/vue": [
+        "./packages/vue/src/index.ts"
+      ],
+      "@smeditor/extension-details": [
+        "./packages/extension-details/src/index.ts"
+      ],
+      "@smeditor/extension-embed": [
+        "./packages/extension-embed/src/index.ts"
+      ],
+      "@smeditor/extension-emoji": [
+        "./packages/extension-emoji/src/index.ts"
+      ],
+      "@smeditor/extension-find-replace": [
+        "./packages/extension-find-replace/src/index.ts"
+      ],
+      "@smeditor/extension-typography": [
+        "./packages/extension-typography/src/index.ts"
+      ]
+    }
+  },
+  "exclude": [
+    "**/node_modules",
+    "**/dist",
+    "**/build"
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "name": "@smeditor/full-kit",
+  "version": "0.0.8",
+  "description": "FullKit bundle — StarterKit plus MVP-safe rich formatting, typography, colors, indent and word count.",
+  "license": "MIT",
+  "author": "SMEditor contributors",
+  "homepage": "https://github.com/sCruze/smeditor/tree/main/packages/full-kit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sCruze/smeditor.git",
+    "directory": "packages/full-kit"
+  },
+  "bugs": {
+    "url": "https://github.com/sCruze/smeditor/issues"
+  },
+  "keywords": [
+    "smeditor",
+    "rich-text",
+    "editor",
+    "wysiwyg",
+    "contenteditable",
+    "preset",
+    "bundle"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@smeditor/extension-background-color": "workspace:*",
+    "@smeditor/extension-font-family": "workspace:*",
+    "@smeditor/extension-font-size": "workspace:*",
+    "@smeditor/extension-highlight": "workspace:*",
+    "@smeditor/extension-indent": "workspace:*",
+    "@smeditor/extension-inline-code": "workspace:*",
+    "@smeditor/extension-line-height": "workspace:*",
+    "@smeditor/extension-subscript": "workspace:*",
+    "@smeditor/extension-superscript": "workspace:*",
+    "@smeditor/extension-table": "workspace:*",
+    "@smeditor/extension-text-color": "workspace:*",
+    "@smeditor/extension-text-stroke": "workspace:*",
+    "@smeditor/extension-word-count": "workspace:*",
+    "@smeditor/starter-kit": "workspace:*"
+  },
+  "peerDependencies": {
+    "@smeditor/core": ">=0.0.1 <0.1.0"
+  },
+  "devDependencies": {
+    "@smeditor/core": "workspace:*",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
