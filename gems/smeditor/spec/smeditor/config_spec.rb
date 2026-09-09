@@ -16,6 +16,10 @@ RSpec.describe SMEditor::Config do
       expect(SMEditor.config.default_kit).to eq("starter")
     end
 
+    it "auto-includes packaged assets" do
+      expect(SMEditor.config.auto_include_assets).to be(true)
+    end
+
     it "allows the common content tags" do
       tags = SMEditor.config.allowed_tags
       expect(tags).to include("p", "h1", "strong", "a", "table", "li")

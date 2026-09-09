@@ -7,6 +7,10 @@ SMEditor.configure do |config|
   # Used by the JavaScript adapter when uploads are enabled.
   config.upload_path = "/smeditor/uploads"
 
+  # Assets are shipped inside the gem and inserted automatically with the
+  # first editor field. Set false if you call `smeditor_assets` in your layout.
+  config.auto_include_assets = true
+
   # "starter" gives the MVP toolbar; "full" enables the larger extension set.
   config.default_kit = "starter"
 

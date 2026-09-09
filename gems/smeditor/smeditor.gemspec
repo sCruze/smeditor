@@ -7,12 +7,12 @@ Gem::Specification.new do |spec|
   spec.version       = SMEditor::Rails::VERSION
   spec.authors       = ["SMEditor contributors"]
   spec.email         = ["sCruze@users.noreply.github.com"]
-  spec.summary       = "Rails integration for the SMEditor rich text editor."
+  spec.summary       = "Self-contained SMEditor rich text editor for Rails."
   spec.description   = <<~DESC
-    Thin Rails adapter for SMEditor. Provides a form helper, a safe
-    server-side renderer, and an optional ActiveStorage-backed upload
-    endpoint. The editor itself is the upstream npm packages — this gem
-    never replaces or duplicates them.
+    Self-contained SMEditor integration for Rails. The gem ships the editor
+    core, starter/full extension kits, browser bundle, default theme, form
+    helper, safe renderer, and optional ActiveStorage upload endpoint. Host
+    applications do not need npm, React, esbuild, or jsbundling-rails.
   DESC
   spec.homepage      = "https://github.com/sCruze/smeditor"
   spec.license       = "MIT"
@@ -31,10 +31,10 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.extra_rdoc_files = ["README.md", "CHANGELOG.md", "LICENSE"]
 
-  spec.add_dependency "rails", ">= 7.0"
+  spec.add_dependency "rails", ">= 7.0", "< 9.0"
 
   spec.add_development_dependency "rspec", "~> 3.13"
-  spec.add_development_dependency "rails-html-sanitizer", ">= 1.6"
+  spec.add_development_dependency "rails-html-sanitizer", "~> 1.6"
 
   spec.metadata = {
     "homepage_uri"          => spec.homepage,

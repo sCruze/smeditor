@@ -5,19 +5,18 @@ the v0.x MVP; it ships after the npm packages are stable.
 
 ## Role in the architecture
 
-`smeditor` is a **thin adapter**, not a second core. Per the
-brief (§3 / §5 / §15.12) it must:
+`smeditor` is a **self-contained Rails distribution** of the same SMEditor
+JavaScript core, not a fork or second editor implementation. The source of
+truth stays in `packages/*`; release tooling compiles those sources into a
+single browser bundle committed under the gem's `app/assets`.
 
-- Mount the existing npm-published JS bundle (no fork, no parallel
-  editor implementation in Ruby).
-- Provide a few Rails-shaped helpers on top of the JS.
-- Stay loose enough that swapping the JS for a newer SMEditor version
-  is a `bundle update` + `yarn upgrade`, nothing else.
+The consuming Rails application installs only the gem. It does not install
+`@smeditor/*`, React, esbuild, Vite, or `jsbundling-rails`.
 
-What it must **never** do (per §3): hold the document schema, expose a
-"commands" layer in Ruby, ship its own rendering pipeline, or grow CRUD
-/ permissions logic. Those belong in the host app, not in the editor
-gem.
+Ruby remains responsible only for Rails integration: form helpers, safe
+rendering, configuration and optional uploads. Schema, commands, parsing and
+editor behavior stay in the JavaScript core that is vendored into the gem at
+release time.
 
 ## Public surface
 
@@ -58,34 +57,34 @@ gems/smeditor/
 │        ├─ engine.rb                 # Rails::Engine subclass
 │        ├─ config.rb                 # `SMEditor.configure { |c| … }`
 │        ├─ form_helper.rb            # `smeditor_editor`
-│        ├─ renderer.rb               # JSON → safe HTML
+│        ├─ renderer.rb               # stored HTML → safe HTML
 │        ├─ sanitizer.rb              # Rails::HTML::Sanitizer wrapper
 │        └─ uploads.rb                # ActiveStorage adapter
 ├─ app/
-│  └─ assets/javascripts/
-│     └─ smeditor.js                 # esbuild entry shipping the npm bundle
+│  └─ assets/
+│     ├─ javascripts/smeditor.js     # generated self-contained browser bundle
+│     └─ stylesheets/smeditor.css    # generated default theme
 └─ test/
    └─ …
 ```
 
 ## Asset strategy
 
-Two supported paths, picked at install time:
+The gem ships two generated assets:
 
-1. **Importmap / esbuild** (default for new Rails 7+ apps).
-   The gem registers an asset (`app/assets/javascripts/smeditor.js`)
-   that re-exports `@smeditor/react` and the starter kit so a host app
-   can `import { Editor } from "@smeditor/rails"` without touching the
-   npm registry directly. The build runs at gem-release time, not in
-   the host.
+- `app/assets/javascripts/smeditor.js` — a browser bundle containing core,
+  StarterKit, FullKit and the Rails DOM adapter.
+- `app/assets/stylesheets/smeditor.css` — the default theme with tokens
+  flattened into one file.
 
-2. **Webpacker / shakapacker** (legacy).
-   Host adds `gem "smeditor"`, then `yarn add @smeditor/react
-   @smeditor/starter-kit` themselves. The gem only contributes the
-   form helper and the upload endpoint.
+`scripts/build-gem-assets.mjs` creates both assets from the monorepo sources.
+They are built by SMEditor maintainers and committed before a gem release.
+The host Rails app never runs this build step.
 
-Both paths use the same upstream JS — no separate fork lives in the
-gem.
+The engine registers both files with the Rails asset pipeline.
+`smeditor_editor` auto-includes them once per view unless
+`config.auto_include_assets = false`; in explicit mode the layout calls
+`smeditor_assets`.
 
 ## Sanitization
 
@@ -109,8 +108,8 @@ expected to wire its own.
 ## Build order (for the gem itself)
 
 1. Engine + initializer plumbing
-2. `smeditor_editor` form helper (mounts a `<div data-smeditor>` and
-   a hidden field; JS attaches via a tiny boot script)
+2. Generated browser assets + `smeditor_editor` form helper (mounts a
+   `<div data-smeditor>` and hidden field; packaged JS attaches automatically)
 3. Renderer + sanitizer (safe public-side display)
 4. ActiveStorage upload controller
 5. RSpec test suite hitting a dummy Rails app

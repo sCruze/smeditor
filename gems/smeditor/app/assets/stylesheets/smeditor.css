@@ -1,11 +1,136 @@
+/* SMEditor default theme tokens.
+ *
+ * Two ways to pick a theme:
+ *
+ *   1. Do nothing → the editor follows `prefers-color-scheme`.
+ *   2. Set `data-theme="light"` or `data-theme="dark"` on any element
+ *      that wraps the editor (or on <html>). The explicit attribute
+ *      wins over the media query.
+ *
+ * Why both: developers want auto for new users (matches the rest of
+ * their app), but a theme toggle in product UI needs explicit control
+ * that survives reloads. Supporting both lets either pattern work.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Light theme — the default. Applied to :root, to anything explicitly tagged
+ * light, and inherited by everything not explicitly tagged dark.
+ * ------------------------------------------------------------------------ */
+:root,
+[data-theme="light"] {
+  /* Surface */
+  --sme-color-surface: #ffffff;
+  --sme-color-surface-muted: #f7f7f8;
+  --sme-color-border: #e5e7eb;
+  --sme-color-border-strong: #c7c9d1;
+
+  /* Text */
+  --sme-color-text: #1a1a1f;
+  --sme-color-text-muted: #6b7280;
+  --sme-color-placeholder: #9ca3af;
+
+  /* Accent */
+  --sme-color-accent: #5b21b6;
+  --sme-color-accent-soft: #ede9fe;
+  --sme-color-primary: var(--sme-color-accent);
+  --sme-color-focus: #7c3aed;
+  --sme-color-danger: #b91c1c;
+  --sme-color-danger-soft: #fee2e2;
+
+  /* Elevation */
+  --sme-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --sme-shadow-md: 0 10px 38px -10px rgba(15, 23, 42, 0.16),
+    0 10px 20px -15px rgba(15, 23, 42, 0.12);
+}
+
+/* Common (non-color) tokens — shared by both themes. */
+:root {
+  /* Spacing */
+  --sme-space-1: 4px;
+  --sme-space-2: 8px;
+  --sme-space-3: 12px;
+  --sme-space-4: 16px;
+
+  /* Radius */
+  --sme-radius-sm: 4px;
+  --sme-radius-md: 8px;
+  --sme-radius-lg: 12px;
+
+  /* Type */
+  --sme-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --sme-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --sme-text-base: 16px;
+  --sme-text-sm: 14px;
+  --sme-leading: 1.6;
+
+  /* Controls */
+  --sme-control-height: 32px;
+  --sme-focus-ring: 0 0 0 3px color-mix(
+    in srgb,
+    var(--sme-color-focus) 22%,
+    transparent
+  );
+
+  /* Indent step (block-level indentation) */
+  --sme-indent-step: 24px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Dark theme — applied when explicitly tagged, OR via media query when
+ * no explicit theme is set on the document.
+ * ------------------------------------------------------------------------ */
+[data-theme="dark"] {
+  --sme-color-surface: #0f1115;
+  --sme-color-surface-muted: #1a1d23;
+  --sme-color-border: #2a2d35;
+  --sme-color-border-strong: #3a3f49;
+  --sme-color-text: #e7e9ee;
+  --sme-color-text-muted: #9aa0aa;
+  --sme-color-placeholder: #5c606b;
+  --sme-color-accent: #a78bfa;
+  --sme-color-accent-soft: #2a1d54;
+  --sme-color-primary: var(--sme-color-accent);
+  --sme-color-focus: #c4b5fd;
+  --sme-color-danger: #fca5a5;
+  --sme-color-danger-soft: #451a1a;
+  --sme-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --sme-shadow-md: 0 10px 38px -10px rgba(0, 0, 0, 0.5),
+    0 10px 20px -15px rgba(0, 0, 0, 0.45);
+}
+
+/* Auto-dark: only when the document root has no explicit override. The
+ * `:not([data-theme])` guard means a `data-theme="light"` setting on
+ * any ancestor wins, even at night. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sme-color-surface: #0f1115;
+    --sme-color-surface-muted: #1a1d23;
+    --sme-color-border: #2a2d35;
+    --sme-color-border-strong: #3a3f49;
+    --sme-color-text: #e7e9ee;
+    --sme-color-text-muted: #9aa0aa;
+    --sme-color-placeholder: #5c606b;
+    --sme-color-accent: #a78bfa;
+    --sme-color-accent-soft: #2a1d54;
+    --sme-color-primary: var(--sme-color-accent);
+    --sme-color-focus: #c4b5fd;
+    --sme-color-danger: #fca5a5;
+    --sme-color-danger-soft: #451a1a;
+    --sme-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --sme-shadow-md: 0 10px 38px -10px rgba(0, 0, 0, 0.5),
+      0 10px 20px -15px rgba(0, 0, 0, 0.45);
+  }
+}
+
 /* SMEditor default theme.
  *
  * Imports tokens, then styles the structural classes set by core
  * (`.smeditor-editor`, `.smeditor-content`) and the toolbar
  * primitives (`.smeditor-toolbar`, `.smeditor-button`, `.smeditor-dropdown`).
  */
-
-@import "./tokens.css";
 
 .smeditor {
   font-family: var(--sme-font-sans);
@@ -1083,3 +1208,11 @@
     padding: var(--sme-space-3);
   }
 }
+
+
+/* Rails self-contained adapter controls */
+.smeditor-select { height: 30px; max-width: 130px; border: 1px solid var(--sme-color-border); border-radius: var(--sme-radius-sm); background: var(--sme-color-surface); color: var(--sme-color-text); padding: 0 6px; font: inherit; font-size: var(--sme-text-sm); }
+.smeditor-select:focus-visible, .smeditor-color-input:focus-visible { outline: 2px solid var(--sme-color-accent); outline-offset: 1px; }
+.smeditor-color-input { width: 30px; height: 30px; padding: 2px; border: 1px solid var(--sme-color-border); border-radius: var(--sme-radius-sm); background: var(--sme-color-surface); cursor: pointer; }
+.smeditor-file-input { display: none !important; }
+.smeditor-mount { width: 100%; }

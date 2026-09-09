@@ -1,6 +1,8 @@
 # SMEditor Rails example
 
-This example shows the intended host-app wiring for `gems/smeditor`. It is documented as integration snippets because the Rails adapter lives as a gem inside this monorepo rather than as a full generated application.
+The Rails gem is self-contained: the editor core, kits, JavaScript bundle and
+default theme are packaged inside `smeditor`. The host application does not
+install npm packages or add a JavaScript bundler for SMEditor.
 
 ## Gemfile
 
@@ -8,15 +10,10 @@ This example shows the intended host-app wiring for `gems/smeditor`. It is docum
 gem "smeditor", path: "../../gems/smeditor"
 ```
 
-Install the frontend packages used by the gem boot script:
-
-```bash
-yarn add @smeditor/react @smeditor/starter-kit @smeditor/full-kit @smeditor/theme-default react react-dom
-```
-
 ## Install
 
 ```bash
+bundle install
 bin/rails generate smeditor:install
 ```
 
@@ -34,14 +31,8 @@ SMEditor.configure do |config|
   config.upload_path = "/smeditor/uploads"
   config.default_kit = "full"
   config.sanitize_output = true
+  config.auto_include_assets = true
 end
-```
-
-## JavaScript entrypoint
-
-```js
-// app/javascript/application.js
-import "./smeditor";
 ```
 
 ## Form usage
@@ -53,10 +44,11 @@ import "./smeditor";
 <% end %>
 ```
 
+No `npm install`, no `import "./smeditor"`, and no `jsbundling-rails` are
+required.
+
 ## Rendering saved content
 
 ```erb
 <%= smeditor_render(@article.content) %>
 ```
-
-The renderer sanitizes stored HTML by default and preserves the formatting emitted by SMEditor, including table structure, images, alignment and color-related inline styles.

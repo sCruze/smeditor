@@ -40,6 +40,14 @@ done
 
 cd "$GEM_DIR"
 
+for asset in app/assets/javascripts/smeditor.js app/assets/stylesheets/smeditor.css; do
+  if [ ! -s "$asset" ]; then
+    echo "error: missing vendored asset $asset" >&2
+    echo "       run: node scripts/build-gem-assets.mjs" >&2
+    exit 1
+  fi
+done
+
 VERSION="$(ruby -r ./lib/smeditor/rails/version -e 'print SMEditor::Rails::VERSION')"
 echo "==> smeditor ${VERSION}"
 

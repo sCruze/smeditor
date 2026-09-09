@@ -1,21 +1,15 @@
 # smeditor
 
-Rails integration for the [SMEditor](https://github.com/sCruze/smeditor)
-rich-text editor.
+Self-contained Rails integration for [SMEditor](https://github.com/sCruze/smeditor).
 
-This gem is a **thin adapter**. The editor is the upstream npm
-packages (`@smeditor/react`, `@smeditor/starter-kit`, …); the gem
-adds a form helper, a safe server-side renderer, and an optional
-upload endpoint. It holds no schema, no commands and no rendering
-pipeline of its own.
+The gem ships the **editor core, StarterKit, FullKit, browser bundle and default
+CSS theme inside the gem itself**. A Rails application does not need npm,
+React, esbuild, Vite, importmap pins, or `jsbundling-rails` to use SMEditor.
 
 ## Requirements
 
-- Ruby >= 3.0, Rails >= 7.0
-- A JavaScript bundler in the host app — `jsbundling-rails` (esbuild,
-  rollup, webpack, bun) or Vite. The boot script imports the npm
-  packages by bare specifier, which Sprockets and importmap cannot
-  resolve on their own.
+- Ruby >= 3.0
+- Rails >= 7.0
 
 ## Install
 
@@ -29,113 +23,158 @@ bundle install
 bin/rails generate smeditor:install
 ```
 
-The generator writes `config/initializers/smeditor.rb` and copies the
-boot script to `app/javascript/smeditor.js`. Then install the editor
-itself and import the script:
+That is enough for normal editor usage. The generator only creates
+`config/initializers/smeditor.rb`; it does not copy JavaScript into the host
+application and does not ask you to install frontend packages.
 
-```bash
-npm install @smeditor/react @smeditor/starter-kit \
-            @smeditor/full-kit @smeditor/theme-default react react-dom
-```
-
-```js
-// app/javascript/application.js
-import "./smeditor";
-```
-
-Mount the engine if you want the upload endpoint:
+For ActiveStorage-backed image uploads, mount the engine:
 
 ```ruby
 # config/routes.rb
 mount SMEditor::Rails::Engine => "/smeditor"
 ```
 
-## Namespace
-
-Константа гема — `SMEditor` (не `Smeditor`). Каталоги называются `smeditor/`,
-поэтому движок сам регистрирует переопределение в обоих автозагрузчиках
-Zeitwerk (`smeditor` → `SMEditor`) до сканирования autoload-путей, а генератор
-объявляет namespace явно. Настроек в приложении не требуется, и глобальные
-inflections ActiveSupport не трогаются.
-
 ## Configure
 
 ```ruby
 # config/initializers/smeditor.rb
-SMEditor.configure do |c|
-  c.uploads             = :active_storage   # or :none (default)
-  c.sanitize_output     = true
-  c.default_kit         = "starter"         # or "full"
-  c.upload_path         = "/smeditor/uploads"
-  c.allowed_tags        = %w[p h1 h2 h3 strong em a img]
-  c.max_upload_size     = 10 * 1024 * 1024
-  c.allowed_upload_types = %w[image/png image/jpeg image/webp]
+SMEditor.configure do |config|
+  config.uploads = :none                 # or :active_storage
+  config.upload_path = "/smeditor/uploads"
+  config.default_kit = "starter"        # or "full"
+  config.sanitize_output = true
+
+  # true by default: the first editor field includes smeditor.js/css.
+  # Set false if you prefer calling `smeditor_assets` in your layout.
+  config.auto_include_assets = true
+
+  config.max_upload_size = 10 * 1024 * 1024
+  config.allowed_upload_types = %w[
+    image/png image/jpeg image/gif image/webp image/avif image/bmp
+  ]
 end
 ```
 
 ## Use
 
-The form helper mounts an editor and persists its HTML through a
-hidden field — a normal form submit saves the content:
-
 ```erb
 <%= form_with model: @article do |form| %>
-  <%= form.smeditor_editor :content %>
+  <%= form.smeditor_editor :content,
+        kit: "full",
+        placeholder: "Write…" %>
+
   <%= form.submit %>
 <% end %>
 ```
 
-Options: `:kit` (`"starter"` / `"full"`), `:placeholder`, `:class`,
-`:upload_url`.
+The helper renders a hidden Rails field plus the editor mount. The packaged
+browser bundle updates the hidden field on every editor change, including a
+normal bubbling `input` event and a `smeditor:change` custom event, so form submit and autosave code can
+observe the value without CKEditor-specific integration.
 
-Display saved content on a public page — always sanitized:
+Available options:
+
+- `kit: "starter" | "full"`
+- `placeholder:`
+- `class:`
+- `label:` — editor ARIA label
+- `upload_url:` — custom image upload endpoint
+- `include_assets: false` — skip automatic asset tags for this field
+
+### Assets in the layout (optional)
+
+By default the first `smeditor_editor` call includes the packaged assets once.
+If you prefer explicit layout assets:
+
+```ruby
+# config/initializers/smeditor.rb
+SMEditor.configure { |config| config.auto_include_assets = false }
+```
+
+```erb
+<head>
+  <%= smeditor_assets %>
+</head>
+```
+
+The files still come from the gem; this only changes where the tags are
+rendered.
+
+## Programmatic access
+
+After boot, the editor instance is available on both the hidden input and the
+mount element:
+
+```js
+const input = document.querySelector("[data-smeditor-input]")
+const editor = input.smeditorInstance
+
+editor.getHTML()
+editor.setContent("<p>New content</p>")
+editor.commands.toggleBold?.()
+```
+
+The bundle also exposes `window.SMEditor.boot()` and
+`window.SMEditor.destroy()` for advanced integrations.
+
+## Turbo
+
+SMEditor boots on `DOMContentLoaded`, `turbo:load`, and `turbo:frame-load`.
+Before Turbo caches a page, editor instances are destroyed and their mounts are
+reset, preventing stale contenteditable state after navigation.
+
+## Rendering saved content
 
 ```erb
 <%= smeditor_render(@article.content) %>
 ```
 
-## How it works
+Stored editor HTML is treated as untrusted input. `smeditor_render` sanitizes
+allowed tags, URLs and inline formatting and hardens `_blank` links by default.
 
-`smeditor_editor` renders a hidden field (seeded with the stored
-HTML) and an empty mount point. The boot script finds each mount,
-attaches a real editor from the npm packages, and writes
-`editor.getHTML()` back into the hidden field on every change. The
-model attribute is a plain HTML string — SMEditor's transport format —
-so no special column type or serializer is needed.
-
-Booting runs on `DOMContentLoaded`, on `turbo:load` and on
-`turbo:frame-load`; each mount is booted at most once.
-
-## Rendering and trust
-
-Stored editor HTML is treated as untrusted input. `smeditor_render`
-passes it through `SMEditor::Rails::Sanitizer`, which applies the tag
-allow-list, strips unsafe URLs and `style` declarations, and adds
-`rel="noopener noreferrer"` to `target="_blank"` links.
-
-Setting `config.sanitize_output = false` marks stored content
-`html_safe` without sanitizing it. Only do that when the content is
-already trusted upstream.
+Set `config.sanitize_output = false` only if the stored HTML is already trusted.
 
 ## Uploads
 
 With `config.uploads = :active_storage`, the engine exposes
-`POST /smeditor/uploads`. It stores image files via ActiveStorage and
-responds with `{ src, alt, title }` for the editor to embed.
+`POST /smeditor/uploads`. It stores the image through ActiveStorage and returns
+`{ src, alt, title }` to the editor.
 
-The endpoint is **unauthenticated by default** and only enforces the
-content-type allow-list and `max_upload_size`. Subclass
-`SMEditor::UploadsController` and add your own authorization before
-exposing it to the public internet.
+The default upload endpoint is unauthenticated. It enforces the configured file
+size and MIME allow-list, but public applications should add their own
+authorization policy.
 
-With `:none`, no endpoint is mounted — wire your own.
+## What the gem contains
+
+The published `.gem` includes:
+
+- SMEditor browser bundle (core + StarterKit + FullKit)
+- default SMEditor theme
+- Rails form helper and FormBuilder extension
+- safe renderer/sanitizer
+- optional ActiveStorage upload endpoint
+- install generator
+
+The source monorepo still uses TypeScript/pnpm to develop and rebuild the
+frontend packages. Those are **build-time tools for SMEditor maintainers only**;
+they are not runtime dependencies of applications that install the gem.
 
 ## Development
+
+Rebuild the vendored Rails assets after changing core/extensions or the Rails
+browser adapter:
+
+```bash
+node scripts/build-gem-assets.mjs
+```
+
+Then test/build the gem:
 
 ```bash
 cd gems/smeditor
 bundle install
 bundle exec rspec
+gem build smeditor.gemspec
 ```
 
 ## License

@@ -9,6 +9,29 @@ Cross-cutting product changes live in the repository root
 
 ## [Unreleased]
 
+### Changed
+
+- The Rails gem is now self-contained. It ships a precompiled browser bundle
+  containing SMEditor core, StarterKit and FullKit plus the default CSS theme.
+  Consuming Rails applications no longer need npm, React, esbuild, Vite,
+  importmap pins, or `jsbundling-rails`.
+- The Rails browser adapter mounts directly on `@smeditor/core`, removing React
+  from the gem runtime bundle while keeping the React package available for
+  normal npm consumers.
+- `smeditor:install` now creates only the initializer; it no longer copies a
+  host-app JavaScript entrypoint or prints npm installation steps.
+- `smeditor_editor` includes the packaged JS/CSS automatically once per view by
+  default. `config.auto_include_assets = false` + `smeditor_assets` provides an
+  explicit-layout mode.
+- The hidden input now emits bubbling `input` and `smeditor:change` events on editor
+  updates and exposes `smeditorInstance` for autosave/AI/DOCX integrations.
+- Turbo teardown is handled on `turbo:before-cache`.
+
+### Added
+
+- `scripts/build-gem-assets.mjs` creates the vendored browser JS and CSS from
+  the monorepo sources.
+
 ### Fixed
 
 - The boot script no longer imports `@smeditor/theme-default/index.css`, a
@@ -24,9 +47,6 @@ Cross-cutting product changes live in the repository root
 
 ### Added
 
-- `smeditor:install` copies the boot script into `app/javascript/smeditor.js`
-  so the host app's bundler resolves the `@smeditor/*` imports.
-  Pass `--skip-javascript` to opt out.
 - `config.max_upload_size` (10 MB default) and `config.allowed_upload_types`
   are enforced by the upload endpoint.
 - `LICENSE` and `CHANGELOG.md` ship in the gem; the internal `PLAN.md` no

@@ -129,13 +129,17 @@ gem contents --spec-file smeditor-*.gemspec 2>/dev/null || tar -tf smeditor-*.ge
 
 ## 4. Порядок релиза
 
-Гем зависит от npm-пакетов (boot-скрипт импортирует `@smeditor/react` и kit'ы),
-поэтому:
+Rails gem не имеет runtime-зависимости от npm: готовые JS/CSS assets лежат
+внутри гема. Перед релизом, если менялись core/extensions/frontend adapter,
+пересобрать committed assets:
 
-1. Сначала npm-пакеты.
-2. Убедиться, что `npm install @smeditor/react @smeditor/starter-kit
-   @smeditor/full-kit @smeditor/theme-default` ставится в чистом проекте.
-3. Затем гем.
+```bash
+node scripts/build-gem-assets.mjs
+```
+
+Затем проверить diff, тесты и собрать gem. npm-пакеты можно выпускать своим
+Changesets-потоком независимо; Rails-приложение не скачивает их при установке
+`smeditor`.
 
 ---
 

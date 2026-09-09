@@ -19,6 +19,8 @@ RSpec.describe SMEditor::Rails::FormHelper do
       include ActionView::Helpers::FormHelper
       include ActionView::Helpers::FormTagHelper
       include ActionView::Helpers::OutputSafetyHelper
+      include ActionView::Helpers::AssetUrlHelper
+      include ActionView::Helpers::AssetTagHelper
       include SMEditor::Rails::FormHelper
     end.new
   end
@@ -28,6 +30,19 @@ RSpec.describe SMEditor::Rails::FormHelper do
   end
 
   describe "#smeditor_editor" do
+
+    it "includes the packaged assets automatically" do
+      html = view.smeditor_editor(form, :content)
+      expect(html).to include("smeditor.css")
+      expect(html).to include("smeditor.js")
+    end
+
+    it "can skip automatic assets" do
+      html = view.smeditor_editor(form, :content, include_assets: false)
+      expect(html).not_to include("smeditor.css")
+      expect(html).not_to include("smeditor.js")
+    end
+
     it "emits a hidden field seeded with the current value" do
       html = view.smeditor_editor(form, :content)
       expect(html).to include('type="hidden"')

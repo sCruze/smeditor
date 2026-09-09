@@ -1,0 +1,59 @@
+name: Release gem
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish smeditor to RubyGems
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release-gem:
+    name: Validate and release the gem
+    runs-on: ubuntu-latest
+    env:
+      # Fail if Gemfile.lock is out of sync with the gemspec, mirroring the
+      # frozen install the npm workflows use.
+      BUNDLE_FROZEN: "true"
+    defaults:
+      run:
+        working-directory: gems/smeditor
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: gems/smeditor
+
+      - name: RSpec
+        run: bundle exec rspec
+
+      - name: Verify vendored assets
+        run: |
+          test -s app/assets/javascripts/smeditor.js
+          test -s app/assets/stylesheets/smeditor.css
+
+      - name: Build gem
+        # Clear stale artifacts so the pushed file is the one just built.
+        run: |
+          rm -f smeditor-*.gem
+          gem build smeditor.gemspec
+
+      - name: Publish to RubyGems
+        if: ${{ inputs.publish }}
+        run: |
+          GEM_FILE="$(ls smeditor-*.gem | head -n1)"
+          test -n "$GEM_FILE"
+          gem push "$GEM_FILE"
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}

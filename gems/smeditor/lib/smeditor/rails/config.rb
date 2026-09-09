@@ -20,6 +20,9 @@ module SMEditor
     attr_accessor :default_kit
     # Upload endpoint used by the JavaScript adapter when uploads are enabled.
     attr_accessor :upload_path
+    # Include the packaged JS/CSS automatically with the first editor field.
+    # Set false when the host app calls `smeditor_assets` in its layout.
+    attr_accessor :auto_include_assets
     # Hard ceiling on an uploaded file, in bytes. The endpoint is reachable
     # by anyone who can reach the host app unless the controller is
     # subclassed with authentication, so it refuses anything larger.
@@ -38,6 +41,7 @@ module SMEditor
       ]
       @default_kit = "starter"
       @upload_path = "/smeditor/uploads"
+      @auto_include_assets = true
       @max_upload_size = 10 * 1024 * 1024
       @allowed_upload_types = %w[
         image/png image/jpeg image/gif image/webp image/avif image/bmp

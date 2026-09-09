@@ -37,7 +37,8 @@
     "release:gem:dry-run": "bash scripts/publish-gem.sh --dry-run",
     "version:status": "node scripts/bump-version.mjs status",
     "version:gem": "node scripts/bump-version.mjs gem",
-    "check:lockfile": "node scripts/check-lockfile-sync.mjs"
+    "check:lockfile": "node scripts/check-lockfile-sync.mjs",
+    "build:gem-assets": "node scripts/build-gem-assets.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.9",
