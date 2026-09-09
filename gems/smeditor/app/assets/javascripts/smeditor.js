@@ -13,6 +13,53 @@ const starter_kit_1 = require("@smeditor/starter-kit");
 const full_kit_1 = require("@smeditor/full-kit");
 const instances = new Map();
 const disposers = new Map();
+const ICONS = {
+    undo: '<path d="M3.5 8h7a3 3 0 0 1 0 6H6"/><path d="m6 4-3 4 3 4"/>',
+    redo: '<path d="M12.5 8h-7a3 3 0 0 0 0 6H10"/><path d="m10 4 3 4-3 4"/>',
+    bold: '<path d="M4 3h4.5a2.5 2.5 0 0 1 0 5H4z"/><path d="M4 8h5a2.5 2.5 0 0 1 0 5H4z"/>',
+    italic: '<path d="M10 3 6 13"/><path d="M6 3h5"/><path d="M5 13h5"/>',
+    strike: '<path d="M3 8h10"/><path d="M5.5 4.5C6 4 6.7 3.5 8 3.5c2 0 3 1 3 2.5"/><path d="M5 11c0 1.4 1.3 2.5 3 2.5 1.8 0 3-1 3-2.2"/>',
+    underline: '<path d="M4 3v5a4 4 0 0 0 8 0V3"/><path d="M3.5 13.5h9"/>',
+    code: '<path d="m6 5-3 3 3 3"/><path d="m10 5 3 3-3 3"/>',
+    eraser: '<path d="m9 3 5 5-6 6H4l-1-1z"/><path d="m6 6 5 5"/><path d="M9 14h5"/>',
+    link: '<path d="M7 9a3 3 0 0 0 4 0l2-2a3 3 0 1 0-4-4L8 4"/><path d="M9 7a3 3 0 0 0-4 0l-2 2a3 3 0 1 0 4 4l1-1"/>',
+    highlight: '<path d="M3 13l3-1 6-6-2-2-6 6z"/><path d="M2 14h12"/>',
+    textColor: '<text x="3" y="11" font-size="9" font-weight="700" fill="currentColor" stroke="none">A</text><rect x="3" y="13" width="10" height="2" fill="currentColor" stroke="none"/>',
+    background: '<rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 2l12 12"/>',
+    blockquote: '<path d="M3 5v3c0 1.5-.7 2.5-2 3"/><path d="M9 5v3c0 1.5-.7 2.5-2 3"/>',
+    codeBlock: '<rect x="1.5" y="3" width="13" height="10" rx="1.5"/><path d="m5 6.5-2 1.5 2 1.5"/><path d="m11 6.5 2 1.5-2 1.5"/>',
+    hr: '<path d="M2 8h12"/><path d="M2 4h8"/><path d="M2 12h6"/>',
+    bullet: '<circle cx="3.5" cy="4.5" r=".7" fill="currentColor"/><circle cx="3.5" cy="8" r=".7" fill="currentColor"/><circle cx="3.5" cy="11.5" r=".7" fill="currentColor"/><path d="M6 4.5h7M6 8h7M6 11.5h7"/>',
+    ordered: '<text x="2" y="6" font-size="4" font-family="monospace" fill="currentColor" stroke="none">1.</text><text x="2" y="13" font-size="4" font-family="monospace" fill="currentColor" stroke="none">2.</text><path d="M6 4.5h7M6 11.5h7"/>',
+    task: '<rect x="2" y="3" width="3" height="3" rx=".5"/><path d="m2.5 4.5 1 1 1.5-1.5"/><rect x="2" y="10" width="3" height="3" rx=".5"/><path d="M7 4.5h6M7 11.5h6"/>',
+    alignLeft: '<path d="M2.5 4h11M2.5 7h7M2.5 10h11M2.5 13h7"/>',
+    alignCenter: '<path d="M2.5 4h11M4.5 7h7M2.5 10h11M4.5 13h7"/>',
+    alignRight: '<path d="M2.5 4h11M6.5 7h7M2.5 10h11M6.5 13h7"/>',
+    alignJustify: '<path d="M2.5 4h11M2.5 7h11M2.5 10h11M2.5 13h11"/>',
+    indent: '<path d="M2 4h12M7 8h7M2 12h12"/><path d="m2 7 2 1.5L2 10" fill="currentColor"/>',
+    outdent: '<path d="M2 4h12M7 8h7M2 12h12"/><path d="m6 7-2 1.5L6 10" fill="currentColor"/>',
+    image: '<rect x="2" y="3" width="12" height="10" rx="1.5"/><circle cx="5.5" cy="6.5" r="1.2"/><path d="m2.5 11 3.5-3.5 2.5 2.5L11 7.5l2.5 2.5"/>',
+    table: '<rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6.5h12M2 10h12M6 3v10M10 3v10"/>',
+    more: '<circle cx="3.5" cy="8" r="1.2" fill="currentColor"/><circle cx="8" cy="8" r="1.2" fill="currentColor"/><circle cx="12.5" cy="8" r="1.2" fill="currentColor"/>',
+    heading: '<text x="2" y="12" font-family="sans-serif" font-size="9" font-weight="700" fill="currentColor" stroke="none">H</text><text x="9.5" y="13" font-family="sans-serif" font-size="6" font-weight="700" fill="currentColor" stroke="none">2</text>',
+    paragraph: '<text x="3" y="12" font-family="serif" font-size="11" font-weight="700" fill="currentColor" stroke="none">¶</text>',
+    subscript: '<path d="M3 4l4 5"/><path d="M7 4l-4 5"/><text x="9" y="14" font-size="6" font-weight="700" fill="currentColor" stroke="none">x</text>',
+    superscript: '<path d="M3 6l4 5"/><path d="M7 6l-4 5"/><text x="9" y="7" font-size="6" font-weight="700" fill="currentColor" stroke="none">x</text>',
+};
+function svgIcon(name, strokeWidth = 1.5) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", String(strokeWidth));
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    svg.innerHTML = ICONS[name] || "";
+    return svg;
+}
 function csrfToken() {
     var _a, _b;
     return (_b = (_a = document.querySelector('meta[name="csrf-token"]')) === null || _a === void 0 ? void 0 : _a.content) !== null && _b !== void 0 ? _b : null;
@@ -45,41 +92,6 @@ function kitExtensions(kit, uploadUrl) {
         return [...base];
     return base.map((extension) => extension.name === "image" ? starter_kit_1.ImageExtension.configure({ upload }) : extension);
 }
-function button(label, title, action) {
-    const el = document.createElement("button");
-    el.type = "button";
-    el.className = "smeditor-button";
-    el.textContent = label;
-    el.title = title;
-    el.setAttribute("aria-label", title);
-    el.addEventListener("mousedown", (event) => event.preventDefault());
-    el.addEventListener("click", () => action());
-    return el;
-}
-function divider() {
-    const el = document.createElement("span");
-    el.className = "smeditor-toolbar__divider";
-    el.setAttribute("role", "separator");
-    el.setAttribute("aria-hidden", "true");
-    return el;
-}
-function selectControl(label, options, onChange) {
-    const select = document.createElement("select");
-    select.className = "smeditor-select";
-    select.title = label;
-    select.setAttribute("aria-label", label);
-    for (const [value, text] of options) {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = text;
-        select.appendChild(option);
-    }
-    select.addEventListener("change", () => {
-        onChange(select.value);
-        select.value = "";
-    });
-    return select;
-}
 function run(editor, command, ...args) {
     const fn = editor.commands[command];
     if (typeof fn !== "function")
@@ -88,145 +100,368 @@ function run(editor, command, ...args) {
     editor.focus();
     return Boolean(result);
 }
-function activeButton(editor, el, name, attrs) {
-    el.dataset.active = editor.isActive(name, attrs) ? "true" : "false";
+function hasCommand(editor, command) {
+    return typeof editor.commands[command] === "function";
+}
+function divider() {
+    const el = document.createElement("span");
+    el.className = "smeditor-toolbar__divider";
+    el.setAttribute("role", "separator");
+    el.setAttribute("aria-hidden", "true");
+    return el;
+}
+function commandButton(editor, iconName, title, command, active, label) {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "smeditor-button";
+    el.title = title;
+    el.setAttribute("aria-label", title);
+    if (label)
+        el.textContent = label;
+    else
+        el.appendChild(svgIcon(iconName, iconName === "bold" ? 2 : 1.5));
+    el.addEventListener("mousedown", (event) => event.preventDefault());
+    el.addEventListener("click", () => command());
+    const refresh = () => {
+        if (active) {
+            const value = active();
+            el.dataset.active = value ? "true" : "false";
+            el.classList.toggle("is-active", value);
+        }
+    };
+    el.__smeditorRefresh = refresh;
+    refresh();
+    return el;
+}
+function dropdown(ariaLabel, triggerContent, items, options = {}) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "smeditor-dropdown";
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "smeditor-button smeditor-dropdown__trigger";
+    trigger.setAttribute("aria-haspopup", "menu");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.setAttribute("aria-label", ariaLabel);
+    trigger.title = ariaLabel;
+    const label = document.createElement("span");
+    label.className = "smeditor-dropdown__label";
+    if (typeof triggerContent === "string")
+        label.textContent = triggerContent;
+    else
+        label.appendChild(triggerContent);
+    trigger.appendChild(label);
+    let summary = null;
+    if (options.summary) {
+        summary = document.createElement("span");
+        summary.className = "smeditor-dropdown__summary";
+        trigger.appendChild(summary);
+    }
+    const chevron = document.createElement("span");
+    chevron.className = "smeditor-dropdown__chevron";
+    chevron.setAttribute("aria-hidden", "true");
+    chevron.textContent = "▾";
+    trigger.appendChild(chevron);
+    wrapper.appendChild(trigger);
+    let menu = null;
+    const close = () => {
+        wrapper.classList.remove("is-open");
+        trigger.setAttribute("aria-expanded", "false");
+        menu === null || menu === void 0 ? void 0 : menu.remove();
+        menu = null;
+    };
+    const open = () => {
+        var _a, _b, _c, _d;
+        if (menu)
+            return close();
+        wrapper.classList.add("is-open");
+        trigger.setAttribute("aria-expanded", "true");
+        menu = document.createElement("div");
+        menu.className = "smeditor-dropdown__menu" + (options.align === "right" ? " is-right" : "");
+        menu.setAttribute("role", "menu");
+        menu.setAttribute("aria-label", ariaLabel);
+        for (const spec of items()) {
+            if (spec.separatorBefore) {
+                const sep = document.createElement("div");
+                sep.className = "smeditor-dropdown__separator";
+                sep.setAttribute("role", "separator");
+                menu.appendChild(sep);
+            }
+            if (spec.content) {
+                menu.appendChild(spec.content);
+                continue;
+            }
+            const item = document.createElement("button");
+            item.type = "button";
+            item.className = "smeditor-dropdown__item";
+            item.setAttribute("role", spec.active ? "menuitemcheckbox" : "menuitem");
+            const isActive = (_b = (_a = spec.active) === null || _a === void 0 ? void 0 : _a.call(spec)) !== null && _b !== void 0 ? _b : false;
+            if (spec.active)
+                item.setAttribute("aria-checked", String(isActive));
+            item.classList.toggle("is-active", isActive);
+            item.dataset.active = isActive ? "true" : "false";
+            const isDisabled = (_d = (_c = spec.disabled) === null || _c === void 0 ? void 0 : _c.call(spec)) !== null && _d !== void 0 ? _d : false;
+            item.disabled = isDisabled;
+            if (isDisabled)
+                item.setAttribute("aria-disabled", "true");
+            if (spec.icon) {
+                const icon = document.createElement("span");
+                icon.className = "smeditor-dropdown__item-icon";
+                icon.appendChild(svgIcon(spec.icon));
+                item.appendChild(icon);
+            }
+            const text = document.createElement("span");
+            text.className = "smeditor-dropdown__item-label";
+            text.textContent = spec.label;
+            item.appendChild(text);
+            if (spec.shortcut) {
+                const shortcut = document.createElement("span");
+                shortcut.className = "smeditor-dropdown__item-shortcut";
+                shortcut.textContent = spec.shortcut;
+                item.appendChild(shortcut);
+            }
+            item.addEventListener("mousedown", (event) => event.preventDefault());
+            item.addEventListener("click", () => {
+                var _a;
+                if (item.disabled)
+                    return;
+                (_a = spec.action) === null || _a === void 0 ? void 0 : _a.call(spec);
+                close();
+            });
+            menu.appendChild(item);
+        }
+        wrapper.appendChild(menu);
+    };
+    trigger.addEventListener("mousedown", (event) => event.preventDefault());
+    trigger.addEventListener("click", (event) => {
+        event.stopPropagation();
+        open();
+    });
+    const outside = (event) => {
+        if (!menu)
+            return;
+        const path = event.composedPath();
+        if (!path.includes(wrapper))
+            close();
+    };
+    document.addEventListener("pointerdown", outside, true);
+    const refresh = () => {
+        if (summary && options.summary)
+            summary.textContent = options.summary();
+        if (options.active) {
+            const value = options.active();
+            trigger.dataset.active = value ? "true" : "false";
+            trigger.classList.toggle("is-active", value);
+        }
+    };
+    wrapper.__smeditorRefresh = refresh;
+    wrapper.__smeditorDispose = () => document.removeEventListener("pointerdown", outside, true);
+    refresh();
+    return wrapper;
+}
+function colorDropdown(editor, ariaLabel, iconName, markName, setCommand, unsetCommand, extraAttrs = {}) {
+    const colors = [
+        "#1a1a1f", "#6b7280", "#ef4444", "#f97316", "#eab308",
+        "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899",
+        "#ffffff", "#d1d5db", "#fecaca", "#fed7aa", "#fef08a",
+        "#bbf7d0", "#a5f3fc", "#bfdbfe", "#ddd6fe", "#fbcfe8",
+    ];
+    return dropdown(ariaLabel, svgIcon(iconName), () => {
+        const grid = document.createElement("div");
+        grid.className = "smeditor-color-grid";
+        grid.setAttribute("role", "group");
+        const clear = document.createElement("button");
+        clear.type = "button";
+        clear.className = "smeditor-color-grid__swatch smeditor-color-grid__swatch--clear";
+        clear.title = `Clear ${ariaLabel.toLowerCase()}`;
+        clear.setAttribute("aria-label", clear.title);
+        clear.addEventListener("mousedown", (e) => e.preventDefault());
+        clear.addEventListener("click", () => run(editor, unsetCommand));
+        grid.appendChild(clear);
+        for (const color of colors) {
+            const swatch = document.createElement("button");
+            swatch.type = "button";
+            swatch.className = "smeditor-color-grid__swatch";
+            swatch.style.backgroundColor = color;
+            swatch.title = color;
+            swatch.setAttribute("aria-label", `${ariaLabel}: ${color}`);
+            swatch.addEventListener("mousedown", (e) => e.preventDefault());
+            swatch.addEventListener("click", () => run(editor, setCommand, { color, ...extraAttrs }));
+            grid.appendChild(swatch);
+        }
+        return [{ label: "", content: grid }];
+    }, { active: () => editor.isActive(markName) });
+}
+function blockTypeSummary(editor) {
+    if ((0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "blockquote"))
+        return "❝";
+    if (editor.isActive("code_block"))
+        return "</>";
+    for (const level of [1, 2, 3, 4, 5, 6]) {
+        if (editor.isActive("heading", { level }))
+            return `H${level}`;
+    }
+    return "P";
+}
+function tablePicker(editor) {
+    return dropdown("Insert table", svgIcon("table"), () => {
+        const grid = document.createElement("div");
+        grid.className = "smeditor-table-picker";
+        grid.setAttribute("role", "group");
+        grid.setAttribute("aria-label", "Insert table size");
+        const cells = [];
+        const refreshHover = (rows, cols) => {
+            cells.forEach((cell, idx) => {
+                const r = Math.floor(idx / 6) + 1;
+                const c = (idx % 6) + 1;
+                cell.classList.toggle("is-on", r <= rows && c <= cols);
+            });
+            label.textContent = rows && cols ? `${rows} × ${cols}` : "Select size";
+        };
+        for (let r = 1; r <= 6; r++) {
+            for (let c = 1; c <= 6; c++) {
+                const cell = document.createElement("button");
+                cell.type = "button";
+                cell.className = "smeditor-table-picker__cell";
+                cell.setAttribute("aria-label", `Insert ${r} by ${c} table`);
+                cell.addEventListener("mouseenter", () => refreshHover(r, c));
+                cell.addEventListener("mousedown", (e) => e.preventDefault());
+                cell.addEventListener("click", () => run(editor, "insertTable", { rows: r, cols: c }));
+                cells.push(cell);
+                grid.appendChild(cell);
+            }
+        }
+        const label = document.createElement("div");
+        label.className = "smeditor-table-picker__label";
+        label.textContent = "Select size";
+        const box = document.createElement("div");
+        box.append(grid, label);
+        box.addEventListener("mouseleave", () => refreshHover(0, 0));
+        return [{ label: "", content: box }];
+    });
+}
+function textDropdown(editor, ariaLabel, label, values, command, unset) {
+    return dropdown(ariaLabel, label, () => values.map(([text, value]) => ({
+        label: text,
+        action: () => value === null && unset ? run(editor, unset) : run(editor, command, { [command === "setFontFamily" ? "family" : command === "setFontSize" ? "size" : "value"]: value }),
+    })));
 }
 function buildToolbar(editor, kit, uploadUrl) {
-    var _a;
     const toolbar = document.createElement("div");
     toolbar.className = "smeditor-toolbar";
     toolbar.setAttribute("role", "toolbar");
     toolbar.setAttribute("aria-label", "SMEditor toolbar");
-    const undo = button("↶", "Undo", () => run(editor, "undo"));
-    const redo = button("↷", "Redo", () => run(editor, "redo"));
-    toolbar.append(undo, redo, divider());
-    const block = selectControl("Block type", [
-        ["", "Block"], ["p", "Paragraph"], ["h1", "Heading 1"], ["h2", "Heading 2"],
-        ["h3", "Heading 3"], ["h4", "Heading 4"], ["quote", "Blockquote"], ["code", "Code block"],
-    ], (value) => {
-        if (value === "p")
-            run(editor, "setParagraph");
-        else if (/^h[1-6]$/.test(value))
-            run(editor, "setHeading", { level: Number(value.slice(1)) });
-        else if (value === "quote")
-            run(editor, "toggleBlockquote");
-        else if (value === "code")
-            run(editor, "setCodeBlock");
-    });
-    toolbar.append(block, divider());
-    const bold = button("B", "Bold", () => run(editor, "toggleBold"));
-    const italic = button("I", "Italic", () => run(editor, "toggleItalic"));
-    const underline = button("U", "Underline", () => run(editor, "toggleUnderline"));
-    const strike = button("S", "Strike", () => run(editor, "toggleStrike"));
-    bold.style.fontWeight = "700";
-    italic.style.fontStyle = "italic";
-    underline.style.textDecoration = "underline";
-    strike.style.textDecoration = "line-through";
-    toolbar.append(bold, italic, underline, strike);
-    if (kit === "full") {
-        const inlineCode = button("</>", "Inline code", () => run(editor, "toggleCode"));
-        const sub = button("x₂", "Subscript", () => run(editor, "toggleSubscript"));
-        const sup = button("x²", "Superscript", () => run(editor, "toggleSuperscript"));
-        toolbar.append(inlineCode, sub, sup);
-    }
-    const clear = button("Tx", "Clear formatting", () => run(editor, "clearFormatting"));
-    const link = button("🔗", "Link", () => {
+    toolbar.setAttribute("aria-orientation", "horizontal");
+    const controls = [];
+    const add = (...els) => { toolbar.append(...els); controls.push(...els); };
+    const undo = commandButton(editor, "undo", "Undo", () => run(editor, "undo"));
+    const redo = commandButton(editor, "redo", "Redo", () => run(editor, "redo"));
+    add(undo, redo, divider());
+    const block = dropdown("Block type", svgIcon("heading"), () => {
+        const items = [{ label: "Paragraph", icon: "paragraph", active: () => editor.isActive("paragraph"), action: () => run(editor, "setParagraph") }];
+        for (let level = 1; level <= 6; level++)
+            items.push({ label: `Heading ${level}`, icon: "heading", shortcut: `⌘⌥${level}`, active: () => editor.isActive("heading", { level }), action: () => run(editor, "setHeading", { level }), separatorBefore: level === 1 });
+        items.push({ label: "Quote", icon: "blockquote", active: () => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "blockquote"), action: () => run(editor, "toggleBlockquote"), separatorBefore: true });
+        items.push({ label: "Code block", icon: "codeBlock", active: () => editor.isActive("code_block"), action: () => run(editor, "setCodeBlock") });
+        return items;
+    }, { summary: () => blockTypeSummary(editor) });
+    const lists = dropdown("Lists", svgIcon("bullet"), () => [
+        { label: "Bullet List", icon: "bullet", shortcut: "⌘⇧8", active: () => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "bullet_list"), action: () => run(editor, "toggleBulletList") },
+        { label: "Ordered List", icon: "ordered", shortcut: "⌘⇧7", active: () => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "ordered_list"), action: () => run(editor, "toggleOrderedList") },
+        { label: "Task List", icon: "task", shortcut: "⌘⇧9", active: () => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "task_list"), action: () => run(editor, "toggleTaskList") },
+    ], { active: () => ["bullet_list", "ordered_list", "task_list"].some((name) => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), name)) });
+    add(block, lists, divider());
+    add(commandButton(editor, "bold", "Bold", () => run(editor, "toggleBold"), () => editor.isActive("bold")), commandButton(editor, "italic", "Italic", () => run(editor, "toggleItalic"), () => editor.isActive("italic")), commandButton(editor, "strike", "Strike-through", () => run(editor, "toggleStrike"), () => editor.isActive("strike")), commandButton(editor, "underline", "Underline", () => run(editor, "toggleUnderline"), () => editor.isActive("underline")), commandButton(editor, "eraser", "Clear formatting", () => run(editor, "clearFormatting")), commandButton(editor, "link", "Link", () => {
         if (editor.isActive("link"))
             return run(editor, "unsetLink");
         const href = window.prompt("Link URL", "https://");
-        if (href)
-            return run(editor, "setLink", { href });
+        return href ? run(editor, "setLink", { href }) : false;
+    }, () => editor.isActive("link")), divider());
+    const align = dropdown("Alignment", svgIcon("alignLeft"), () => [
+        { label: "Left", icon: "alignLeft", active: () => editor.isActive("text_align", { align: "left" }), action: () => run(editor, "setTextAlign", { align: "left" }) },
+        { label: "Center", icon: "alignCenter", active: () => editor.isActive("text_align", { align: "center" }), action: () => run(editor, "setTextAlign", { align: "center" }) },
+        { label: "Right", icon: "alignRight", active: () => editor.isActive("text_align", { align: "right" }), action: () => run(editor, "setTextAlign", { align: "right" }) },
+        { label: "Justify", icon: "alignJustify", active: () => editor.isActive("text_align", { align: "justify" }), action: () => run(editor, "setTextAlign", { align: "justify" }) },
+        { label: "Increase indent", icon: "indent", action: () => run(editor, "indent"), separatorBefore: true },
+        { label: "Decrease indent", icon: "outdent", action: () => run(editor, "outdent") },
+    ]);
+    add(align, divider());
+    add(commandButton(editor, "blockquote", "Blockquote", () => run(editor, "toggleBlockquote"), () => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "blockquote")), commandButton(editor, "codeBlock", "Code block", () => run(editor, "setCodeBlock"), () => editor.isActive("code_block")), commandButton(editor, "hr", "Horizontal rule", () => run(editor, "insertHorizontalRule")));
+    const image = dropdown("Insert image", svgIcon("image"), () => {
+        const items = [{ label: "From URL…", icon: "link", action: () => {
+                    var _a;
+                    const src = window.prompt("Image URL", "https://");
+                    if (!src)
+                        return;
+                    const alt = (_a = window.prompt("Alt text (optional)", "")) !== null && _a !== void 0 ? _a : "";
+                    run(editor, "insertImage", { src, alt: alt || undefined });
+                } }];
+        if (uploadUrl && hasCommand(editor, "uploadImage"))
+            items.push({ label: "Upload image…", icon: "image", action: () => {
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = "image/*";
+                    input.onchange = () => { var _a; const file = (_a = input.files) === null || _a === void 0 ? void 0 : _a[0]; if (file)
+                        run(editor, "uploadImage", file); };
+                    input.click();
+                } });
+        return items;
     });
-    toolbar.append(clear, link, divider());
-    const list = selectControl("List", [["", "List"], ["bullet", "Bulleted"], ["ordered", "Numbered"], ["task", "Task list"]], (value) => {
-        if (value === "bullet")
-            run(editor, "toggleBulletList");
-        if (value === "ordered")
-            run(editor, "toggleOrderedList");
-        if (value === "task")
-            run(editor, "toggleTaskList");
-    });
-    const align = selectControl("Alignment", [["", "Align"], ["left", "Left"], ["center", "Center"], ["right", "Right"], ["justify", "Justify"]], (value) => {
-        if (value)
-            run(editor, "setTextAlign", { align: value });
-    });
-    toolbar.append(list, align, divider());
-    toolbar.append(button("❝", "Blockquote", () => run(editor, "toggleBlockquote")), button("{ }", "Code block", () => run(editor, "setCodeBlock")), button("―", "Horizontal rule", () => run(editor, "insertHorizontalRule")));
-    const image = button("Image", "Insert image by URL", () => {
-        const src = window.prompt("Image URL", "https://");
-        if (src)
-            run(editor, "insertImage", { src });
-    });
-    toolbar.append(image);
-    if (uploadUrl && typeof editor.commands.uploadImage === "function") {
-        const file = document.createElement("input");
-        file.type = "file";
-        file.accept = "image/*";
-        file.className = "smeditor-file-input";
-        file.tabIndex = -1;
-        file.setAttribute("aria-hidden", "true");
-        const upload = button("Upload", "Upload image", () => file.click());
-        file.addEventListener("change", () => {
-            var _a;
-            const selected = (_a = file.files) === null || _a === void 0 ? void 0 : _a[0];
-            if (selected)
-                run(editor, "uploadImage", selected);
-            file.value = "";
-        });
-        toolbar.append(upload, file);
-    }
-    toolbar.append(button("Table", "Insert table", () => {
-        const rows = Number(window.prompt("Rows", "3") || "3");
-        const cols = Number(window.prompt("Columns", "3") || "3");
-        run(editor, "insertTable", { rows, cols, withHeaderRow: true });
-    }));
+    add(image, tablePicker(editor));
     if (kit === "full") {
-        toolbar.append(divider());
-        const font = selectControl("Font family", [
-            ["", "Font"], ["Arial", "Arial"], ["Georgia", "Georgia"], ["Times New Roman", "Times"],
-            ["Verdana", "Verdana"], ["Courier New", "Courier"],
-        ], (value) => value && run(editor, "setFontFamily", { family: value }));
-        const size = selectControl("Font size", [["", "Size"], ["12px", "12"], ["14px", "14"], ["16px", "16"], ["18px", "18"], ["24px", "24"], ["32px", "32"]], (value) => value && run(editor, "setFontSize", { size: value }));
-        const line = selectControl("Line height", [["", "Line"], ["1", "1.0"], ["1.25", "1.25"], ["1.5", "1.5"], ["1.75", "1.75"], ["2", "2.0"]], (value) => value && run(editor, "setLineHeight", { value }));
-        toolbar.append(font, size, line);
-        const textColor = document.createElement("input");
-        textColor.type = "color";
-        textColor.className = "smeditor-color-input";
-        textColor.title = "Text color";
-        textColor.setAttribute("aria-label", "Text color");
-        textColor.addEventListener("input", () => run(editor, "setTextColor", { color: textColor.value }));
-        const bgColor = document.createElement("input");
-        bgColor.type = "color";
-        bgColor.className = "smeditor-color-input";
-        bgColor.title = "Background color";
-        bgColor.setAttribute("aria-label", "Background color");
-        bgColor.addEventListener("input", () => run(editor, "setBackgroundColor", { color: bgColor.value }));
-        toolbar.append(textColor, bgColor);
+        add(divider());
+        add(colorDropdown(editor, "Highlight", "highlight", "highlight", "setHighlight", "unsetHighlight"), colorDropdown(editor, "Text color", "textColor", "text_color", "setTextColor", "unsetTextColor"), colorDropdown(editor, "Text stroke", "textColor", "text_stroke", "setTextStroke", "unsetTextStroke", { width: 1 }), colorDropdown(editor, "Background color", "background", "background_color", "setBackgroundColor", "unsetBackgroundColor"), textDropdown(editor, "Font family", "Font", [["Default", null], ["Sans-serif", "ui-sans-serif, system-ui, sans-serif"], ["Serif", "ui-serif, Georgia, serif"], ["Monospace", "ui-monospace, Menlo, monospace"], ["Georgia", "Georgia, serif"], ["Courier", "'Courier New', monospace"]], "setFontFamily", "unsetFontFamily"), textDropdown(editor, "Font size", "Size", [["Default", null], ["Small · 13px", "13px"], ["Normal · 16px", "16px"], ["Large · 20px", "20px"], ["Huge · 28px", "28px"]], "setFontSize", "unsetFontSize"), textDropdown(editor, "Line height", "Spacing", [["Default", null], ["Tight · 1", "1"], ["Snug · 1.15", "1.15"], ["Normal · 1.5", "1.5"], ["Relaxed · 2", "2"]], "setLineHeight"));
+        if (hasCommand(editor, "addComment")) {
+            add(commandButton(editor, "", "Comment", () => {
+                const body = window.prompt("New comment");
+                if (!body)
+                    return false;
+                return run(editor, "addComment", { threadId: `comment-${Date.now()}` });
+            }, undefined, "Comment"));
+        }
+        const more = dropdown("More tools", svgIcon("more"), () => [
+            { label: "Inline code", icon: "code", shortcut: "⌘E", active: () => editor.isActive("code"), action: () => run(editor, "toggleCode") },
+            { label: "Subscript", icon: "subscript", active: () => editor.isActive("subscript"), action: () => run(editor, "toggleSubscript"), separatorBefore: true },
+            { label: "Superscript", icon: "superscript", active: () => editor.isActive("superscript"), action: () => run(editor, "toggleSuperscript") },
+            { label: "Increase indent", icon: "indent", action: () => run(editor, "indent"), separatorBefore: true },
+            { label: "Decrease indent", icon: "outdent", action: () => run(editor, "outdent") },
+        ], { align: "right" });
+        add(more);
     }
-    const updateState = () => {
-        undo.disabled = !editor.canUndo();
-        redo.disabled = !editor.canRedo();
-        activeButton(editor, bold, "bold");
-        activeButton(editor, italic, "italic");
-        activeButton(editor, underline, "underline");
-        activeButton(editor, strike, "strike");
-        link.dataset.active = editor.isActive("link") ? "true" : "false";
+    const refresh = () => {
+        var _a, _b;
+        undo.toggleAttribute("disabled", !editor.canUndo());
+        redo.toggleAttribute("disabled", !editor.canRedo());
+        for (const control of controls)
+            (_b = (_a = control).__smeditorRefresh) === null || _b === void 0 ? void 0 : _b.call(_a);
     };
-    const disposeUpdate = editor.on("update", updateState);
-    const disposeSelection = editor.on("selectionUpdate", updateState);
-    queueMicrotask(updateState);
-    const listForMount = (_a = disposers.get(editor.element)) !== null && _a !== void 0 ? _a : [];
-    listForMount.push(disposeUpdate, disposeSelection);
-    disposers.set(editor.element, listForMount);
+    const disposeUpdate = editor.on("update", refresh);
+    const disposeSelection = editor.on("selectionUpdate", refresh);
+    queueMicrotask(refresh);
+    toolbar.__smeditorDispose = () => {
+        var _a, _b;
+        disposeUpdate();
+        disposeSelection();
+        for (const control of controls)
+            (_b = (_a = control).__smeditorDispose) === null || _b === void 0 ? void 0 : _b.call(_a);
+    };
     return toolbar;
 }
+function shadowRootFor(mount) {
+    const root = mount.shadowRoot || mount.attachShadow({ mode: "open" });
+    root.innerHTML = "";
+    const stylesheet = mount.dataset.smeditorStylesheet;
+    if (stylesheet) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = stylesheet;
+        root.appendChild(link);
+    }
+    return root;
+}
 function bootMount(mount) {
+    var _a, _b;
     if (instances.has(mount))
         return;
-    if (mount.smeditorInstance) {
-        instances.set(mount, mount.smeditorInstance);
-        return;
-    }
     const field = mount.closest(".smeditor-field");
     const input = field === null || field === void 0 ? void 0 : field.querySelector("[data-smeditor-input]");
     if (!field || !input)
@@ -234,14 +469,18 @@ function bootMount(mount) {
     const kit = mount.dataset.smeditorKit === "full" ? "full" : "starter";
     const uploadUrl = mount.dataset.smeditorUploadUrl || undefined;
     const placeholder = mount.dataset.smeditorPlaceholder || undefined;
-    mount.innerHTML = "";
+    const explicitTheme = ((_b = (_a = mount.parentElement) === null || _a === void 0 ? void 0 : _a.closest("[data-theme]")) === null || _b === void 0 ? void 0 : _b.dataset.theme)
+        || document.documentElement.dataset.theme;
+    if (explicitTheme === "light" || explicitTheme === "dark")
+        mount.dataset.theme = explicitTheme;
+    const root = shadowRootFor(mount);
     const shell = document.createElement("div");
     shell.className = "smeditor";
     const surface = document.createElement("div");
     surface.className = "smeditor-editor";
     surface.setAttribute("aria-label", mount.dataset.smeditorLabel || "Rich text editor");
     shell.appendChild(surface);
-    mount.appendChild(shell);
+    root.appendChild(shell);
     const editor = (0, core_1.createEditor)({
         element: surface,
         extensions: kitExtensions(kit, uploadUrl),
@@ -254,11 +493,13 @@ function bootMount(mount) {
             input.dispatchEvent(new CustomEvent("smeditor:change", { bubbles: true, detail: { editor: current } }));
         },
     });
-    shell.insertBefore(buildToolbar(editor, kit, uploadUrl), surface);
+    const toolbar = buildToolbar(editor, kit, uploadUrl);
+    shell.insertBefore(toolbar, surface);
     input.smeditorInstance = editor;
     mount.smeditorInstance = editor;
     mount.dataset.smeditorBooted = "1";
     instances.set(mount, editor);
+    disposers.set(mount, [() => { var _a, _b; return (_b = (_a = toolbar).__smeditorDispose) === null || _b === void 0 ? void 0 : _b.call(_a); }]);
 }
 function boot(root = document) {
     root.querySelectorAll("[data-smeditor]").forEach(bootMount);
@@ -269,12 +510,9 @@ function destroy(root = document) {
         const editor = instances.get(mount);
         if (!editor)
             return;
-        const surface = editor.element;
-        if (surface) {
-            for (const dispose of (_a = disposers.get(surface)) !== null && _a !== void 0 ? _a : [])
-                dispose();
-            disposers.delete(surface);
-        }
+        for (const dispose of (_a = disposers.get(mount)) !== null && _a !== void 0 ? _a : [])
+            dispose();
+        disposers.delete(mount);
         editor.destroy();
         const field = mount.closest(".smeditor-field");
         const input = field === null || field === void 0 ? void 0 : field.querySelector("[data-smeditor-input]");
@@ -283,7 +521,8 @@ function destroy(root = document) {
         delete mount.smeditorInstance;
         delete mount.dataset.smeditorBooted;
         instances.delete(mount);
-        mount.innerHTML = "";
+        if (mount.shadowRoot)
+            mount.shadowRoot.innerHTML = "";
     });
 }
 const api = { boot, destroy, createEditor: core_1.createEditor, StarterKit: starter_kit_1.StarterKit, FullKit: full_kit_1.FullKit, ImageExtension: starter_kit_1.ImageExtension };
@@ -291,12 +530,10 @@ if (typeof window !== "undefined") {
     window.SMEditor = Object.assign(window.SMEditor || {}, api);
     if (!window.__smeditorRailsEventsBound) {
         window.__smeditorRailsEventsBound = true;
-        if (document.readyState === "loading") {
+        if (document.readyState === "loading")
             document.addEventListener("DOMContentLoaded", () => { var _a; return (_a = window.SMEditor) === null || _a === void 0 ? void 0 : _a.boot(); });
-        }
-        else {
+        else
             boot();
-        }
         document.addEventListener("turbo:load", () => { var _a; return (_a = window.SMEditor) === null || _a === void 0 ? void 0 : _a.boot(); });
         document.addEventListener("turbo:frame-load", (event) => { var _a; return (_a = window.SMEditor) === null || _a === void 0 ? void 0 : _a.boot(event.target || document); });
         document.addEventListener("turbo:before-cache", () => { var _a; return (_a = window.SMEditor) === null || _a === void 0 ? void 0 : _a.destroy(); });

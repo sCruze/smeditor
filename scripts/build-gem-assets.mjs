@@ -107,10 +107,47 @@ fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(outFile, output);
 console.log(`Built ${path.relative(root, outFile)} (${Math.round(Buffer.byteLength(output) / 1024)} KiB, ${modules.length} modules)`);
 
-const tokens = fs.readFileSync(path.join(root, "packages/theme-default/src/tokens.css"), "utf8");
+let tokens = fs.readFileSync(path.join(root, "packages/theme-default/src/tokens.css"), "utf8");
+// The Rails adapter renders the editor in a ShadowRoot so host-application CSS
+// cannot mutate toolbar/content styles. Mirror the theme token selectors onto
+// :host so the same stylesheet works both in the document and inside shadow DOM.
+tokens = tokens
+  .replace(':root,\n[data-theme="light"] {', ':root,\n:host,\n:host([data-theme="light"]),\n[data-theme="light"] {')
+  .replace('/* Common (non-color) tokens — shared by both themes. */\n:root {', '/* Common (non-color) tokens — shared by both themes. */\n:root,\n:host {')
+  .replace('[data-theme="dark"] {', ':host([data-theme="dark"]),\n[data-theme="dark"] {')
+  .replace(':root:not([data-theme="light"]) {', ':root:not([data-theme="light"]),\n  :host(:not([data-theme="light"])) {');
 let theme = fs.readFileSync(path.join(root, "packages/theme-default/src/index.css"), "utf8");
 theme = theme.replace(/@import\s+["']\.\/tokens\.css["'];?\s*/m, "");
-const railsExtras = `\n/* Rails self-contained adapter controls */\n.smeditor-select { height: 30px; max-width: 130px; border: 1px solid var(--sme-color-border); border-radius: var(--sme-radius-sm); background: var(--sme-color-surface); color: var(--sme-color-text); padding: 0 6px; font: inherit; font-size: var(--sme-text-sm); }\n.smeditor-select:focus-visible, .smeditor-color-input:focus-visible { outline: 2px solid var(--sme-color-accent); outline-offset: 1px; }\n.smeditor-color-input { width: 30px; height: 30px; padding: 2px; border: 1px solid var(--sme-color-border); border-radius: var(--sme-radius-sm); background: var(--sme-color-surface); cursor: pointer; }\n.smeditor-file-input { display: none !important; }\n.smeditor-mount { width: 100%; }\n`;
+const railsExtras = `
+/* Rails self-contained adapter / style isolation */
+:host {
+  display: block;
+  width: 100%;
+  color: var(--sme-color-text);
+  font-family: var(--sme-font-sans);
+  font-size: var(--sme-text-base);
+  line-height: normal;
+  text-align: initial;
+}
+.smeditor,
+.smeditor *,
+.smeditor *::before,
+.smeditor *::after { box-sizing: border-box; }
+.smeditor button,
+.smeditor input,
+.smeditor select,
+.smeditor textarea {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.smeditor button { -webkit-tap-highlight-color: transparent; }
+.smeditor svg { display: block; flex: 0 0 auto; }
+.smeditor-file-input { display: none !important; }
+.smeditor-mount { width: 100%; }
+`;
 const cssDir = path.join(root, "gems/smeditor/app/assets/stylesheets");
 fs.mkdirSync(cssDir, { recursive: true });
 const cssFile = path.join(cssDir, "smeditor.css");

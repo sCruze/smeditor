@@ -30,6 +30,7 @@ module SMEditor
         kit = (options[:kit] || SMEditor.config.default_kit).to_s
         upload_url = options.fetch(:upload_url, smeditor_upload_url)
         include_assets = options.fetch(:include_assets, SMEditor.config.auto_include_assets)
+        stylesheet_url = asset_path("smeditor.css")
 
         hidden = form.hidden_field(
           method,
@@ -47,6 +48,7 @@ module SMEditor
             smeditor_placeholder: options[:placeholder],
             smeditor_upload_url: upload_url,
             smeditor_label: options[:label],
+            smeditor_stylesheet: stylesheet_url,
           }.compact,
         )
 

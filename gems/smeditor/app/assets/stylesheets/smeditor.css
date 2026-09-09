@@ -17,6 +17,8 @@
  * light, and inherited by everything not explicitly tagged dark.
  * ------------------------------------------------------------------------ */
 :root,
+:host,
+:host([data-theme="light"]),
 [data-theme="light"] {
   /* Surface */
   --sme-color-surface: #ffffff;
@@ -44,7 +46,8 @@
 }
 
 /* Common (non-color) tokens — shared by both themes. */
-:root {
+:root,
+:host {
   /* Spacing */
   --sme-space-1: 4px;
   --sme-space-2: 8px;
@@ -82,6 +85,7 @@
  * Dark theme — applied when explicitly tagged, OR via media query when
  * no explicit theme is set on the document.
  * ------------------------------------------------------------------------ */
+:host([data-theme="dark"]),
 [data-theme="dark"] {
   --sme-color-surface: #0f1115;
   --sme-color-surface-muted: #1a1d23;
@@ -105,7 +109,8 @@
  * `:not([data-theme])` guard means a `data-theme="light"` setting on
  * any ancestor wins, even at night. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme="light"]),
+  :host(:not([data-theme="light"])) {
     --sme-color-surface: #0f1115;
     --sme-color-surface-muted: #1a1d23;
     --sme-color-border: #2a2d35;
@@ -1210,9 +1215,31 @@
 }
 
 
-/* Rails self-contained adapter controls */
-.smeditor-select { height: 30px; max-width: 130px; border: 1px solid var(--sme-color-border); border-radius: var(--sme-radius-sm); background: var(--sme-color-surface); color: var(--sme-color-text); padding: 0 6px; font: inherit; font-size: var(--sme-text-sm); }
-.smeditor-select:focus-visible, .smeditor-color-input:focus-visible { outline: 2px solid var(--sme-color-accent); outline-offset: 1px; }
-.smeditor-color-input { width: 30px; height: 30px; padding: 2px; border: 1px solid var(--sme-color-border); border-radius: var(--sme-radius-sm); background: var(--sme-color-surface); cursor: pointer; }
+/* Rails self-contained adapter / style isolation */
+:host {
+  display: block;
+  width: 100%;
+  color: var(--sme-color-text);
+  font-family: var(--sme-font-sans);
+  font-size: var(--sme-text-base);
+  line-height: normal;
+  text-align: initial;
+}
+.smeditor,
+.smeditor *,
+.smeditor *::before,
+.smeditor *::after { box-sizing: border-box; }
+.smeditor button,
+.smeditor input,
+.smeditor select,
+.smeditor textarea {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.smeditor button { -webkit-tap-highlight-color: transparent; }
+.smeditor svg { display: block; flex: 0 0 auto; }
 .smeditor-file-input { display: none !important; }
 .smeditor-mount { width: 100%; }

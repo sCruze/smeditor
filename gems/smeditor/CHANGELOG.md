@@ -1,5 +1,13 @@
 # Changelog — smeditor
 
+## 0.2.1 — 2026-09-09
+
+- Rails editor now renders inside Shadow DOM so host application CSS cannot alter the SMEditor toolbar or editing surface.
+- Rails toolbar now uses the same SMEditor visual language and control layout as the playground instead of native selects/text buttons.
+- Theme tokens work inside the isolated editor and continue to follow light/dark preference.
+- The self-contained gem still requires no npm, React, esbuild, or jsbundling-rails in the host Rails application.
+
+
 All notable changes to the Rails adapter are recorded here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the gem
 follows [RubyGems versioning](https://guides.rubygems.org/patterns/).
