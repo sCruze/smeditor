@@ -89,6 +89,7 @@ class Editor implements EditorInstance {
   private readonly onDomBlur = () =>
     this.emit("blur", { editor: this });
   private readonly onSelectionChange = () => this.syncSelectionFromDOM();
+  private readonly selectionChangeTargets: EventTarget[] = [];
   private readonly onCompositionStart = () => {
     this.composing = true;
   };
@@ -430,7 +431,16 @@ class Editor implements EditorInstance {
     el.addEventListener("compositionend", this.onCompositionEnd);
 
     if (typeof document !== "undefined") {
-      document.addEventListener("selectionchange", this.onSelectionChange);
+      // Keep the model selection in sync in both regular DOM and Shadow DOM.
+      // Chromium exposes the live shadow selection on ShadowRoot; listening to
+      // that root as well as Document avoids missing drag-selection events.
+      const root = el.getRootNode?.();
+      const targets: EventTarget[] = [document];
+      if (root && root !== document && "addEventListener" in root) targets.push(root);
+      for (const target of targets) {
+        target.addEventListener("selectionchange", this.onSelectionChange);
+        this.selectionChangeTargets.push(target);
+      }
     }
 
     this.renderToDOM();
@@ -774,9 +784,10 @@ class Editor implements EditorInstance {
       );
       this.element.removeEventListener("compositionend", this.onCompositionEnd);
     }
-    if (typeof document !== "undefined") {
-      document.removeEventListener("selectionchange", this.onSelectionChange);
+    for (const target of this.selectionChangeTargets) {
+      target.removeEventListener("selectionchange", this.onSelectionChange);
     }
+    this.selectionChangeTargets.length = 0;
     for (const ext of this.extensions) {
       ext.onDestroy?.(this);
     }
