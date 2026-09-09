@@ -511,12 +511,17 @@ function selectionForSurface(surface: HTMLElement): Selection | null {
  * This mirrors React's <BubbleMenu />: selecting non-empty text opens a small
  * formatting toolbar above the live DOM range.
  */
-function buildBubbleMenu(editor: EditorInstance, surface: HTMLElement): HTMLDivElement {
+function buildBubbleMenu(editor: EditorInstance, surface: HTMLElement, container: HTMLElement): HTMLDivElement {
   const menu = document.createElement("div");
   menu.className = "smeditor-floating smeditor-bubble-menu";
   menu.setAttribute("role", "toolbar");
   menu.setAttribute("aria-label", "Selected text formatting");
-  menu.style.position = "fixed";
+  // Keep the popover in the editor's own coordinate space. `position: fixed`
+  // becomes relative to transformed/filtering ancestors in browsers, which can
+  // shove the menu to the right or down in host applications. Absolute local
+  // positioning is stable because both the selection and container are measured
+  // in viewport coordinates and then converted to editor-local coordinates.
+  menu.style.position = "absolute";
   menu.style.display = "none";
   menu.style.zIndex = "2147483000";
 
@@ -564,22 +569,29 @@ function buildBubbleMenu(editor: EditorInstance, surface: HTMLElement): HTMLDivE
     menu.style.top = "-9999px";
 
     const rect = menu.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
     const margin = 8;
     const offset = 8;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    let left = anchor.left + anchor.width / 2 - rect.width / 2;
-    left = Math.max(margin, Math.min(left, viewportWidth - rect.width - margin));
+    // Calculate the desired position in viewport coordinates first, exactly like
+    // the React playground's Floating primitive, including viewport clamping and
+    // top/bottom collision handling. Then translate that point into the local
+    // coordinate system of the editor shell. This survives transformed parents,
+    // zoomed panels, modals, sidebars and other containing-block creators.
+    let viewportLeft = anchor.left + anchor.width / 2 - rect.width / 2;
+    const maxViewportLeft = Math.max(margin, viewportWidth - rect.width - margin);
+    viewportLeft = Math.max(margin, Math.min(viewportLeft, maxViewportLeft));
 
-    let top = anchor.top - rect.height - offset;
-    if (top < margin) top = anchor.bottom + offset;
-    if (top + rect.height > viewportHeight - margin) {
-      top = Math.max(margin, anchor.top - rect.height - offset);
+    let viewportTop = anchor.top - rect.height - offset;
+    if (viewportTop < margin) viewportTop = anchor.bottom + offset;
+    if (viewportTop + rect.height > viewportHeight - margin) {
+      viewportTop = Math.max(margin, anchor.top - rect.height - offset);
     }
 
-    menu.style.left = `${Math.round(left)}px`;
-    menu.style.top = `${Math.round(top)}px`;
+    menu.style.left = `${Math.round(viewportLeft - containerRect.left)}px`;
+    menu.style.top = `${Math.round(viewportTop - containerRect.top)}px`;
     menu.style.visibility = "visible";
   };
   const scheduleUpdate = () => {
@@ -672,8 +684,8 @@ function bootMount(mount: SMMount): void {
 
   const toolbar = buildToolbar(editor, kit, uploadUrl);
   shell.insertBefore(toolbar, surface);
-  const bubbleMenu = buildBubbleMenu(editor, surface);
-  root.appendChild(bubbleMenu);
+  const bubbleMenu = buildBubbleMenu(editor, surface, shell);
+  shell.appendChild(bubbleMenu);
   input.smeditorInstance = editor;
   mount.smeditorInstance = editor;
   mount.dataset.smeditorBooted = "1";

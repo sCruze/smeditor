@@ -1,5 +1,11 @@
 # Changelog — smeditor
 
+## 0.2.5 — 2026-09-09
+
+- Fixed the Rails selected-text bubble toolbar being displaced to the right or vertically aligned with the text when the host application creates a CSS containing block (for example with `transform`, `filter`, `perspective`, or modal/animated wrappers).
+- Bubble positioning now matches the playground: it is centered above the live selection, flips below near the top viewport edge, and clamps horizontally to the viewport.
+- The Rails bubble is positioned in editor-local coordinates, so host layout transforms no longer corrupt its placement.
+
 ## 0.2.4 — 2026-09-09
 
 - Added the selected-text bubble formatting toolbar to the self-contained Rails adapter, matching the playground behavior.

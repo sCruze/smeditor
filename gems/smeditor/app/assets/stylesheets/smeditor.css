@@ -143,6 +143,7 @@
  */
 
 .smeditor {
+  position: relative;
   font-family: var(--sme-font-sans);
   color: var(--sme-color-text);
   background: var(--sme-color-surface);
