@@ -14,6 +14,12 @@ SMEditor.configure do |config|
   # "starter" gives the MVP toolbar; "full" enables the larger extension set.
   config.default_kit = "starter"
 
+  # Responsive minimum editor height. Numeric values are pixels. You can also
+  # use CSS lengths such as "24rem" or "45vh".
+  config.min_height = 320
+  config.tablet_min_height = 280
+  config.mobile_min_height = 220
+
   # Stored editor HTML is sanitized before public rendering.
   config.sanitize_output = true
 

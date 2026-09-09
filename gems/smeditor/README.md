@@ -42,6 +42,9 @@ SMEditor.configure do |config|
   config.uploads = :none                 # or :active_storage
   config.upload_path = "/smeditor/uploads"
   config.default_kit = "starter"        # or "full"
+  config.min_height = 320               # desktop, px when numeric
+  config.tablet_min_height = 280        # <= 1024px
+  config.mobile_min_height = 220        # <= 640px
   config.sanitize_output = true
 
   # true by default: the first editor field includes smeditor.js/css.
@@ -61,7 +64,10 @@ end
 <%= form_with model: @article do |form| %>
   <%= form.smeditor_editor :content,
         kit: "full",
-        placeholder: "Write…" %>
+        placeholder: "Write…",
+        min_height: 420,
+        tablet_min_height: 340,
+        mobile_min_height: 260 %>
 
   <%= form.submit %>
 <% end %>
@@ -79,7 +85,13 @@ Available options:
 - `class:`
 - `label:` — editor ARIA label
 - `upload_url:` — custom image upload endpoint
+- `min_height:` — minimum height on desktop (> 1024px)
+- `tablet_min_height:` — minimum height on tablet widths (641-1024px)
+- `mobile_min_height:` — minimum height on phone widths (<= 640px)
 - `include_assets: false` — skip automatic asset tags for this field
+
+Height options accept numbers (treated as pixels) or CSS lengths such as `24rem`,
+`45vh`, or `60dvh`. Per-field values override the initializer defaults.
 
 ### Assets in the layout (optional)
 

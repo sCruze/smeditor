@@ -79,6 +79,11 @@
 
   /* Indent step (block-level indentation) */
   --sme-indent-step: 24px;
+
+  /* Responsive editor surface height. Rails can override these per field. */
+  --sme-editor-min-height: 320px;
+  --sme-editor-min-height-tablet: 280px;
+  --sme-editor-min-height-mobile: 220px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -366,7 +371,7 @@
   padding: var(--sme-space-4);
   font-size: var(--sme-text-base);
   line-height: var(--sme-leading);
-  min-height: 8em;
+  min-height: var(--sme-editor-min-height, 320px);
   outline: none;
 }
 
@@ -1186,7 +1191,19 @@
   font-size: 11px;
 }
 
+@media (max-width: 1024px) {
+  .smeditor-content,
+  .smeditor-editor {
+    min-height: var(--sme-editor-min-height-tablet, 280px);
+  }
+}
+
 @media (max-width: 640px) {
+  .smeditor-content,
+  .smeditor-editor {
+    min-height: var(--sme-editor-min-height-mobile, 220px);
+  }
+
   .smeditor-toolbar {
     gap: 4px;
     padding: var(--sme-space-2);

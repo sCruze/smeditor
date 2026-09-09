@@ -23,7 +23,8 @@ module SMEditor
       # form    - a Rails FormBuilder
       # method  - the model attribute (stored as an HTML string)
       # options - :kit ("starter" | "full"), :class, :placeholder,
-      #           :upload_url, :label, :include_assets
+      #           :upload_url, :label, :include_assets, :min_height,
+      #           :tablet_min_height, :mobile_min_height
       def smeditor_editor(form, method, options = {})
         object = form.object
         current = object.respond_to?(method) ? object.public_send(method) : nil
@@ -31,6 +32,9 @@ module SMEditor
         upload_url = options.fetch(:upload_url, smeditor_upload_url)
         include_assets = options.fetch(:include_assets, SMEditor.config.auto_include_assets)
         stylesheet_url = asset_path("smeditor.css")
+        min_height = smeditor_css_length(options.fetch(:min_height, SMEditor.config.min_height), :min_height)
+        tablet_min_height = smeditor_css_length(options.fetch(:tablet_min_height, SMEditor.config.tablet_min_height), :tablet_min_height)
+        mobile_min_height = smeditor_css_length(options.fetch(:mobile_min_height, SMEditor.config.mobile_min_height), :mobile_min_height)
 
         hidden = form.hidden_field(
           method,
@@ -49,6 +53,9 @@ module SMEditor
             smeditor_upload_url: upload_url,
             smeditor_label: options[:label],
             smeditor_stylesheet: stylesheet_url,
+            smeditor_min_height: min_height,
+            smeditor_tablet_min_height: tablet_min_height,
+            smeditor_mobile_min_height: mobile_min_height,
           }.compact,
         )
 
@@ -59,6 +66,15 @@ module SMEditor
       end
 
       private
+
+      CSS_LENGTH = %r{\A(?:0|(?:\d+(?:\.\d+)?)(?:px|rem|em|vh|dvh|svh|vw|%))\z}.freeze
+
+      def smeditor_css_length(value, option_name)
+        normalized = value.is_a?(Numeric) ? "#{value}px" : value.to_s.strip
+        return normalized if normalized.match?(CSS_LENGTH)
+
+        raise ArgumentError, "#{option_name} must be a number (pixels) or a CSS length such as 320px, 24rem, or 45vh"
+      end
 
       def smeditor_upload_url
         SMEditor.config.upload_path if SMEditor.config.uploads == :active_storage

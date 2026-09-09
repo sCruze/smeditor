@@ -20,6 +20,12 @@ RSpec.describe SMEditor::Config do
       expect(SMEditor.config.auto_include_assets).to be(true)
     end
 
+    it "has responsive minimum height defaults" do
+      expect(SMEditor.config.min_height).to eq("320px")
+      expect(SMEditor.config.tablet_min_height).to eq("280px")
+      expect(SMEditor.config.mobile_min_height).to eq("220px")
+    end
+
     it "allows the common content tags" do
       tags = SMEditor.config.allowed_tags
       expect(tags).to include("p", "h1", "strong", "a", "table", "li")

@@ -476,6 +476,15 @@ function bootMount(mount) {
     const root = shadowRootFor(mount);
     const shell = document.createElement("div");
     shell.className = "smeditor";
+    const responsiveHeights = [
+        ["--sme-editor-min-height", mount.dataset.smeditorMinHeight],
+        ["--sme-editor-min-height-tablet", mount.dataset.smeditorTabletMinHeight],
+        ["--sme-editor-min-height-mobile", mount.dataset.smeditorMobileMinHeight],
+    ];
+    for (const [property, value] of responsiveHeights) {
+        if (value)
+            shell.style.setProperty(property, value);
+    }
     const surface = document.createElement("div");
     surface.className = "smeditor-editor";
     surface.setAttribute("aria-label", mount.dataset.smeditorLabel || "Rich text editor");

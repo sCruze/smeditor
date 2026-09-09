@@ -1,5 +1,11 @@
 # Changelog — smeditor
 
+## 0.2.3
+
+- Added configurable responsive minimum editor heights for desktop, tablet, and mobile.
+- Added per-field `min_height`, `tablet_min_height`, and `mobile_min_height` Rails helper options.
+- Added matching global defaults in `SMEditor.configure`.
+
 ## 0.2.2 — 2026-09-09
 
 - Fixed caret jumps and reordered typing inside the Rails Shadow DOM editor. The core now resolves the live DOM Selection from the editor's own root instead of always using `document.getSelection()`.

@@ -76,6 +76,11 @@
 
   /* Indent step (block-level indentation) */
   --sme-indent-step: 24px;
+
+  /* Responsive editor surface height. Rails can override these per field. */
+  --sme-editor-min-height: 320px;
+  --sme-editor-min-height-tablet: 280px;
+  --sme-editor-min-height-mobile: 220px;
 }
 
 /* ---------------------------------------------------------------------------

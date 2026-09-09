@@ -23,6 +23,13 @@ module SMEditor
     # Include the packaged JS/CSS automatically with the first editor field.
     # Set false when the host app calls `smeditor_assets` in its layout.
     attr_accessor :auto_include_assets
+    # Default minimum editor heights. They are responsive by viewport width:
+    # desktop (> 1024px), tablet (641-1024px), and mobile (<= 640px).
+    # Numeric values are interpreted as pixels; CSS lengths such as "24rem"
+    # and "45vh" are accepted too.
+    attr_accessor :min_height
+    attr_accessor :tablet_min_height
+    attr_accessor :mobile_min_height
     # Hard ceiling on an uploaded file, in bytes. The endpoint is reachable
     # by anyone who can reach the host app unless the controller is
     # subclassed with authentication, so it refuses anything larger.
@@ -42,6 +49,9 @@ module SMEditor
       @default_kit = "starter"
       @upload_path = "/smeditor/uploads"
       @auto_include_assets = true
+      @min_height = "320px"
+      @tablet_min_height = "280px"
+      @mobile_min_height = "220px"
       @max_upload_size = 10 * 1024 * 1024
       @allowed_upload_types = %w[
         image/png image/jpeg image/gif image/webp image/avif image/bmp

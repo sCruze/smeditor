@@ -88,6 +88,32 @@ RSpec.describe SMEditor::Rails::FormHelper do
       html = view.smeditor_editor(form, :content, class: "tall")
       expect(html).to include("smeditor-field tall")
     end
+
+    it "emits responsive minimum heights from config" do
+      html = view.smeditor_editor(form, :content)
+      expect(html).to include('data-smeditor-min-height="320px"')
+      expect(html).to include('data-smeditor-tablet-min-height="280px"')
+      expect(html).to include('data-smeditor-mobile-min-height="220px"')
+    end
+
+    it "accepts per-editor responsive height overrides" do
+      html = view.smeditor_editor(
+        form,
+        :content,
+        min_height: 480,
+        tablet_min_height: "24rem",
+        mobile_min_height: "45dvh",
+      )
+      expect(html).to include('data-smeditor-min-height="480px"')
+      expect(html).to include('data-smeditor-tablet-min-height="24rem"')
+      expect(html).to include('data-smeditor-mobile-min-height="45dvh"')
+    end
+
+    it "rejects unsafe height values" do
+      expect do
+        view.smeditor_editor(form, :content, min_height: "320px; color:red")
+      end.to raise_error(ArgumentError, /min_height/)
+    end
   end
 
   describe "the FormBuilder extension" do
