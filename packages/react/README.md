@@ -18,6 +18,7 @@ export default function Page() {
     <Editor
       extensions={[StarterKit]}
       content="<p>Hello world</p>"
+      theme="light"
       onUpdate={({ html, json }) => {
         console.log(html, json);
       }}
@@ -82,6 +83,7 @@ context consumers can refresh active/disabled toolbar state.
 | --- | --- |
 | `toolbar` | Optional render prop receiving the editor instance. |
 | `editable` | Toggles the contenteditable surface. |
+| `theme` | `"light"` (default) or `"dark"`. |
 | `contentAriaLabel` | Accessible label for the editor surface. |
 | `className` / `style` | Applied to the root/content surface. |
 

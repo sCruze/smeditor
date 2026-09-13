@@ -18,6 +18,8 @@ module SMEditor
     attr_accessor :allowed_tags
     # Which bundle the form helper boots: "starter" or "full".
     attr_accessor :default_kit
+    # Default visual theme: "light" or "dark".
+    attr_accessor :default_theme
     # Upload endpoint used by the JavaScript adapter when uploads are enabled.
     attr_accessor :upload_path
     # Include the packaged JS/CSS automatically with the first editor field.
@@ -47,6 +49,7 @@ module SMEditor
         table thead tbody tr td th
       ]
       @default_kit = "starter"
+      @default_theme = "light"
       @upload_path = "/smeditor/uploads"
       @auto_include_assets = true
       @min_height = "320px"

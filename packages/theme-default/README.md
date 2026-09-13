@@ -20,6 +20,10 @@ import "@smeditor/theme-default/tokens.css"; // только CSS-перемен�
 Пакет содержит только CSS: токены дизайна и стили классов
 `.smeditor`, `.smeditor-content`, `.smeditor-toolbar`, `.smeditor-button`.
 
+Светлая тема используется по умолчанию. Для тёмной темы передайте
+`theme: "dark"` при инициализации редактора либо задайте
+`data-theme="dark"` на обёртке редактора.
+
 ## Documentation
 
 Полная документация и примеры: https://github.com/sCruze/smeditor#readme

@@ -648,9 +648,15 @@ function bootMount(mount: SMMount): void {
   const kit = mount.dataset.smeditorKit === "full" ? "full" : "starter";
   const uploadUrl = mount.dataset.smeditorUploadUrl || undefined;
   const placeholder = mount.dataset.smeditorPlaceholder || undefined;
-  const explicitTheme = mount.parentElement?.closest<HTMLElement>("[data-theme]")?.dataset.theme
+  const configuredTheme = mount.dataset.smeditorTheme;
+  const inheritedTheme = mount.parentElement?.closest<HTMLElement>("[data-theme]")?.dataset.theme
     || document.documentElement.dataset.theme;
-  if (explicitTheme === "light" || explicitTheme === "dark") mount.dataset.theme = explicitTheme;
+  const theme = configuredTheme === "dark" || configuredTheme === "light"
+    ? configuredTheme
+    : inheritedTheme === "dark" || inheritedTheme === "light"
+      ? inheritedTheme
+      : "light";
+  mount.dataset.theme = theme;
   const root = shadowRootFor(mount);
 
   const shell = document.createElement("div");
@@ -674,6 +680,7 @@ function bootMount(mount: SMMount): void {
     extensions: kitExtensions(kit, uploadUrl),
     content: input.value || "<p></p>",
     placeholder,
+    theme,
     deepSelection: true,
     onUpdate: ({ editor: current }) => {
       input.value = current.getHTML();

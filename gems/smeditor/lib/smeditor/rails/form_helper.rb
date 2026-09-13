@@ -11,24 +11,28 @@ module SMEditor
       # include assets in <head> can call `smeditor_assets` there and disable
       # auto inclusion with config.auto_include_assets = false.
       def smeditor_assets
-        return "".html_safe if defined?(@_smeditor_assets_rendered) && @_smeditor_assets_rendered
-
-        @_smeditor_assets_rendered = true
-        safe_join([
-          stylesheet_link_tag("smeditor", "data-turbo-track": "reload"),
-          javascript_include_tag("smeditor", defer: true, "data-turbo-track": "reload"),
-        ])
+        if defined?(@_smeditor_assets_rendered) && @_smeditor_assets_rendered
+          "".html_safe
+        else
+          @_smeditor_assets_rendered = true
+          safe_join([
+            stylesheet_link_tag("smeditor", "data-turbo-track": "reload"),
+            javascript_include_tag("smeditor", defer: true, "data-turbo-track": "reload"),
+          ])
+        end
       end
 
       # form    - a Rails FormBuilder
       # method  - the model attribute (stored as an HTML string)
       # options - :kit ("starter" | "full"), :class, :placeholder,
-      #           :upload_url, :label, :include_assets, :min_height,
+      #           :theme ("light" | "dark"), :upload_url, :label,
+      #           :include_assets, :min_height,
       #           :tablet_min_height, :mobile_min_height
       def smeditor_editor(form, method, options = {})
         object = form.object
         current = object.respond_to?(method) ? object.public_send(method) : nil
         kit = (options[:kit] || SMEditor.config.default_kit).to_s
+        theme = smeditor_theme(options.fetch(:theme, SMEditor.config.default_theme))
         upload_url = options.fetch(:upload_url, smeditor_upload_url)
         include_assets = options.fetch(:include_assets, SMEditor.config.auto_include_assets)
         stylesheet_url = asset_path("smeditor.css")
@@ -49,6 +53,7 @@ module SMEditor
           data: {
             smeditor: true,
             smeditor_kit: kit,
+            smeditor_theme: theme,
             smeditor_placeholder: options[:placeholder],
             smeditor_upload_url: upload_url,
             smeditor_label: options[:label],
@@ -71,9 +76,20 @@ module SMEditor
 
       def smeditor_css_length(value, option_name)
         normalized = value.is_a?(Numeric) ? "#{value}px" : value.to_s.strip
-        return normalized if normalized.match?(CSS_LENGTH)
+        if normalized.match?(CSS_LENGTH)
+          normalized
+        else
+          raise ArgumentError, "#{option_name} must be a number (pixels) or a CSS length such as 320px, 24rem, or 45vh"
+        end
+      end
 
-        raise ArgumentError, "#{option_name} must be a number (pixels) or a CSS length such as 320px, 24rem, or 45vh"
+      def smeditor_theme(value)
+        theme = value.to_s
+        unless %w[light dark].include?(theme)
+          raise ArgumentError, 'theme must be "light" or "dark"'
+        end
+
+        theme
       end
 
       def smeditor_upload_url

@@ -96,6 +96,7 @@ export type {
   // Editor
   EditorInstance,
   EditorOptions,
+  EditorTheme,
   Transaction,
   // Events
   EditorEventName,

@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { StrictMode, type ReactNode } from "react";
 import type { EditorInstance } from "@smeditor/core";
 import { StarterKit } from "@smeditor/starter-kit";
-import { Editor } from "../src/index.js";
+import { Editor, EditorContent, useEditor } from "../src/index.js";
 
 let roots: Root[] = [];
 
@@ -118,6 +118,46 @@ describe("React MVP smoke", () => {
     const surface = container.querySelector<HTMLElement>(".smeditor-content");
 
     expect(capturedEditors[0]?.options.editable).toBe(false);
+    expect(surface?.getAttribute("contenteditable")).toBe("false");
+    expect(surface?.getAttribute("aria-readonly")).toBe("true");
+  });
+
+  it("defaults to the light theme and allows an explicit dark theme", () => {
+    const lightContainer = render(
+      <Editor extensions={[StarterKit]} content="<p>Light</p>" />,
+    );
+    const darkContainer = render(
+      <Editor theme="dark" extensions={[StarterKit]} content="<p>Dark</p>" />,
+    );
+
+    expect(
+      lightContainer.querySelector(".smeditor")?.getAttribute("data-theme"),
+    ).toBe("light");
+    expect(
+      lightContainer.querySelector(".smeditor-content")?.getAttribute("data-theme"),
+    ).toBe("light");
+    expect(
+      darkContainer.querySelector(".smeditor")?.getAttribute("data-theme"),
+    ).toBe("dark");
+    expect(
+      darkContainer.querySelector(".smeditor-content")?.getAttribute("data-theme"),
+    ).toBe("dark");
+  });
+
+  it("keeps useEditor editable=false when EditorContent has no editable prop", () => {
+    function ReadOnlyEditor() {
+      const { editor } = useEditor({
+        extensions: [StarterKit],
+        content: "<p>Read-only</p>",
+        editable: false,
+      });
+
+      return <EditorContent editor={editor} />;
+    }
+
+    const container = render(<ReadOnlyEditor />);
+    const surface = container.querySelector<HTMLElement>(".smeditor-content");
+
     expect(surface?.getAttribute("contenteditable")).toBe("false");
     expect(surface?.getAttribute("aria-readonly")).toBe("true");
   });

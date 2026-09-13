@@ -1,5 +1,11 @@
 # Changelog — smeditor
 
+## 0.3.0 — 2026-09-13
+
+- Added explicit `light` and `dark` theme selection across Core, React, and the Rails adapter. Rails now also supports a global `config.default_theme` and per-editor `theme` option.
+- The editor now defaults to the light theme when no theme is configured; dark mode is enabled only when explicitly requested, instead of following `prefers-color-scheme`.
+- Fixed React `EditorContent` overriding an editor created with `editable: false` back to an editable surface when the `editable` prop is omitted.
+
 ## 0.2.5 — 2026-09-09
 
 - Fixed the Rails selected-text bubble toolbar being displaced to the right or vertically aligned with the text when the host application creates a CSS containing block (for example with `transform`, `filter`, `perspective`, or modal/animated wrappers).

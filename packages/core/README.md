@@ -39,6 +39,7 @@ const editor = createEditor({
   element: el,
   content: "<p>Hello</p>",
   extensions: [StarterKit],
+  theme: "light", // default; use "dark" for the dark theme
   onUpdate: ({ html, json }) => {
     console.log("changed:", html, json);
   },

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import type { ReactNode, CSSProperties, ClipboardEvent, DragEvent } from "react";
-import type { EditorInstance } from "@smeditor/core";
+import type { EditorInstance, EditorTheme } from "@smeditor/core";
 import { useEditor, type UseEditorOptions } from "./useEditor.js";
 
 /**
@@ -110,6 +110,8 @@ export interface EditorContentProps {
   editor: EditorInstance | null;
   className?: string;
   style?: CSSProperties;
+  /** Visual theme. Falls back to the editor theme, then `light`. */
+  theme?: EditorTheme;
   /** Accessible label for the editing surface. */
   ariaLabel?: string;
   /**
@@ -134,13 +136,16 @@ export const EditorContent = forwardRef<HTMLDivElement, EditorContentProps>(
       editor,
       className,
       style,
+      theme,
       ariaLabel = "Rich text editor",
-      editable = true,
+      editable,
     },
     ref,
   ) {
     const innerRef = useRef<HTMLDivElement | null>(null);
     useImperativeHandle(ref, () => innerRef.current as HTMLDivElement);
+    const resolvedEditable = editable ?? editor?.isEditable() ?? true;
+    const resolvedTheme = theme ?? editor?.options.theme ?? "light";
 
     useEffect(() => {
       if (!editor || !innerRef.current) return;
@@ -156,26 +161,26 @@ export const EditorContent = forwardRef<HTMLDivElement, EditorContentProps>(
       if (!innerRef.current) return;
       innerRef.current.setAttribute(
         "contenteditable",
-        editable ? "true" : "false",
+        resolvedEditable ? "true" : "false",
       );
-    }, [editable]);
+    }, [resolvedEditable]);
 
     const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
-      if (!editable) return;
+      if (!resolvedEditable) return;
       if (uploadImageFromTransfer(editor, event.clipboardData)) {
         event.preventDefault();
       }
     };
 
     const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-      if (!editable || !hasImageUploadCommand(editor)) return;
+      if (!resolvedEditable || !hasImageUploadCommand(editor)) return;
       if (imageFileFromTransfer(event.dataTransfer)) {
         event.preventDefault();
       }
     };
 
     const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-      if (!editable) return;
+      if (!resolvedEditable) return;
       if (uploadImageFromTransfer(editor, event.dataTransfer)) {
         event.preventDefault();
       }
@@ -186,10 +191,11 @@ export const EditorContent = forwardRef<HTMLDivElement, EditorContentProps>(
         ref={innerRef}
         className={["smeditor-content", className].filter(Boolean).join(" ")}
         style={style}
+        data-theme={resolvedTheme}
         role="textbox"
         aria-label={ariaLabel}
         aria-multiline="true"
-        aria-readonly={!editable}
+        aria-readonly={!resolvedEditable}
         tabIndex={0}
         onPaste={handlePaste}
         onDragOver={handleDragOver}
@@ -230,21 +236,27 @@ export function Editor({
   style,
   toolbar,
   editable,
+  theme = "light",
   contentAriaLabel,
   ...editorOptions
 }: EditorProps) {
   const { editor, version } = useEditor({
     ...editorOptions,
     editable,
+    theme,
   });
 
   return (
     <EditorProvider editor={editor} version={version}>
-      <div className={["smeditor", className].filter(Boolean).join(" ")}>
+      <div
+        className={["smeditor", className].filter(Boolean).join(" ")}
+        data-theme={theme}
+      >
         {toolbar && editor ? toolbar(editor) : null}
         <EditorContent
           editor={editor}
           editable={editable}
+          theme={theme}
           style={style}
           ariaLabel={contentAriaLabel}
         />

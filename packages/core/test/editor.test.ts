@@ -80,6 +80,14 @@ describe("createEditor (headless)", () => {
     expect(readOnly.isEditable()).toBe(false);
   });
 
+  it("uses the light theme by default and preserves an explicit theme", () => {
+    const defaultTheme = createEditor({ extensions: [] });
+    const darkTheme = createEditor({ extensions: [], theme: "dark" });
+
+    expect(defaultTheme.options.theme).toBe("light");
+    expect(darkTheme.options.theme).toBe("dark");
+  });
+
   it("exposes history availability for undo and redo controls", () => {
     const editor = createEditor({ extensions: [] });
 

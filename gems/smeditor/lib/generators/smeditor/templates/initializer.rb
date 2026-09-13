@@ -14,6 +14,9 @@ SMEditor.configure do |config|
   # "starter" gives the MVP toolbar; "full" enables the larger extension set.
   config.default_kit = "starter"
 
+  # "light" is the default. Set "dark" globally or pass theme: per editor.
+  config.default_theme = "light"
+
   # Responsive minimum editor height. Numeric values are pixels. You can also
   # use CSS lengths such as "24rem" or "45vh".
   config.min_height = 320

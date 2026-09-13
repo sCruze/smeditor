@@ -70,6 +70,22 @@ RSpec.describe SMEditor::Rails::FormHelper do
       expect(html).to include('data-smeditor-kit="full"')
     end
 
+    it "uses the configured default theme" do
+      html = view.smeditor_editor(form, :content)
+      expect(html).to include('data-smeditor-theme="light"')
+    end
+
+    it "accepts a per-editor theme override" do
+      html = view.smeditor_editor(form, :content, theme: "dark")
+      expect(html).to include('data-smeditor-theme="dark"')
+    end
+
+    it "rejects an unsupported theme" do
+      expect do
+        view.smeditor_editor(form, :content, theme: "system")
+      end.to raise_error(ArgumentError, /theme/)
+    end
+
     it "carries a placeholder through to the mount" do
       html = view.smeditor_editor(form, :content, placeholder: "Write…")
       expect(html).to include("Write")

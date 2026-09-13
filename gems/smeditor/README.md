@@ -42,6 +42,7 @@ SMEditor.configure do |config|
   config.uploads = :none                 # or :active_storage
   config.upload_path = "/smeditor/uploads"
   config.default_kit = "starter"        # or "full"
+  config.default_theme = "light"        # or "dark"
   config.min_height = 320               # desktop, px when numeric
   config.tablet_min_height = 280        # <= 1024px
   config.mobile_min_height = 220        # <= 640px
@@ -64,6 +65,7 @@ end
 <%= form_with model: @article do |form| %>
   <%= form.smeditor_editor :content,
         kit: "full",
+        theme: "light",
         placeholder: "Write…",
         min_height: 420,
         tablet_min_height: 340,
@@ -81,6 +83,7 @@ observe the value without CKEditor-specific integration.
 Available options:
 
 - `kit: "starter" | "full"`
+- `theme: "light" | "dark"` — defaults to `config.default_theme` (`"light"`)
 - `placeholder:`
 - `class:`
 - `label:` — editor ARIA label

@@ -16,6 +16,10 @@ RSpec.describe SMEditor::Config do
       expect(SMEditor.config.default_kit).to eq("starter")
     end
 
+    it "uses the light theme by default" do
+      expect(SMEditor.config.default_theme).to eq("light")
+    end
+
     it "auto-includes packaged assets" do
       expect(SMEditor.config.auto_include_assets).to be(true)
     end

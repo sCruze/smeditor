@@ -100,7 +100,10 @@ class Editor implements EditorInstance {
   };
 
   constructor(options: EditorOptions) {
-    this.options = options;
+    this.options = {
+      ...options,
+      theme: options.theme ?? "light",
+    };
     this.element = options.element ?? null;
 
     // 1. Resolve extensions
@@ -420,6 +423,7 @@ class Editor implements EditorInstance {
   private attachToElement(): void {
     const el = this.element!;
     el.setAttribute("contenteditable", String(this.options.editable !== false));
+    el.setAttribute("data-theme", this.options.theme ?? "light");
     el.classList.add("smeditor-editor");
     el.addEventListener("input", this.onDomInput);
     el.addEventListener("beforeinput", this.onDomBeforeInput);

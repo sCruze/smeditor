@@ -595,10 +595,15 @@ function bootMount(mount) {
     const kit = mount.dataset.smeditorKit === "full" ? "full" : "starter";
     const uploadUrl = mount.dataset.smeditorUploadUrl || undefined;
     const placeholder = mount.dataset.smeditorPlaceholder || undefined;
-    const explicitTheme = ((_b = (_a = mount.parentElement) === null || _a === void 0 ? void 0 : _a.closest("[data-theme]")) === null || _b === void 0 ? void 0 : _b.dataset.theme)
+    const configuredTheme = mount.dataset.smeditorTheme;
+    const inheritedTheme = ((_b = (_a = mount.parentElement) === null || _a === void 0 ? void 0 : _a.closest("[data-theme]")) === null || _b === void 0 ? void 0 : _b.dataset.theme)
         || document.documentElement.dataset.theme;
-    if (explicitTheme === "light" || explicitTheme === "dark")
-        mount.dataset.theme = explicitTheme;
+    const theme = configuredTheme === "dark" || configuredTheme === "light"
+        ? configuredTheme
+        : inheritedTheme === "dark" || inheritedTheme === "light"
+            ? inheritedTheme
+            : "light";
+    mount.dataset.theme = theme;
     const root = shadowRootFor(mount);
     const shell = document.createElement("div");
     shell.className = "smeditor";
@@ -621,6 +626,7 @@ function bootMount(mount) {
         extensions: kitExtensions(kit, uploadUrl),
         content: input.value || "<p></p>",
         placeholder,
+        theme,
         deepSelection: true,
         onUpdate: ({ editor: current }) => {
             input.value = current.getHTML();
@@ -800,7 +806,7 @@ function createEditor(options) {
 }
 class Editor {
     constructor(options) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         this.selection = null;
         this.history = new history_js_1.History();
         this.emitter = new events_js_1.EventEmitter();
@@ -830,10 +836,13 @@ class Editor {
             // Capture the finished composed text in one shot.
             this.handleDOMInput();
         };
-        this.options = options;
-        this.element = (_a = options.element) !== null && _a !== void 0 ? _a : null;
+        this.options = {
+            ...options,
+            theme: (_a = options.theme) !== null && _a !== void 0 ? _a : "light",
+        };
+        this.element = (_b = options.element) !== null && _b !== void 0 ? _b : null;
         // 1. Resolve extensions
-        this.extensions = (0, schema_js_1.flattenExtensions)((_b = options.extensions) !== null && _b !== void 0 ? _b : []);
+        this.extensions = (0, schema_js_1.flattenExtensions)((_c = options.extensions) !== null && _c !== void 0 ? _c : []);
         // 2. Compile schema
         this.schema = (0, schema_js_1.compileSchema)(this.extensions);
         // 3. Normalize initial content into JSON
@@ -842,7 +851,7 @@ class Editor {
         this.commands = this.buildCommandMap();
         // 5. Lifecycle: onCreate for each extension
         for (const ext of this.extensions) {
-            (_c = ext.onCreate) === null || _c === void 0 ? void 0 : _c.call(ext, this);
+            (_d = ext.onCreate) === null || _d === void 0 ? void 0 : _d.call(ext, this);
         }
         // 6. Mount to DOM if an element was given
         if (this.element) {
@@ -1129,9 +1138,10 @@ class Editor {
         this.attachToElement();
     }
     attachToElement() {
-        var _a;
+        var _a, _b;
         const el = this.element;
         el.setAttribute("contenteditable", String(this.options.editable !== false));
+        el.setAttribute("data-theme", (_a = this.options.theme) !== null && _a !== void 0 ? _a : "light");
         el.classList.add("smeditor-editor");
         el.addEventListener("input", this.onDomInput);
         el.addEventListener("beforeinput", this.onDomBeforeInput);
@@ -1145,7 +1155,7 @@ class Editor {
             // Keep the model selection in sync in both regular DOM and Shadow DOM.
             // Chromium exposes the live shadow selection on ShadowRoot; listening to
             // that root as well as Document avoids missing drag-selection events.
-            const root = (_a = el.getRootNode) === null || _a === void 0 ? void 0 : _a.call(el);
+            const root = (_b = el.getRootNode) === null || _b === void 0 ? void 0 : _b.call(el);
             const targets = [document];
             if (root && root !== document && "addEventListener" in root)
                 targets.push(root);

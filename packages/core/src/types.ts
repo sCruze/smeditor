@@ -200,6 +200,8 @@ export interface InputRule {
 }
 
 /** Editor configuration passed to `createEditor`. */
+export type EditorTheme = "light" | "dark";
+
 export interface EditorOptions {
   /** Initial content. HTML string or DocumentJSON. */
   content?: string | DocumentJSON;
@@ -211,6 +213,8 @@ export interface EditorOptions {
   element?: HTMLElement;
   /** Editable flag. */
   editable?: boolean;
+  /** Visual theme applied to the mounted editor. Defaults to `light`. */
+  theme?: EditorTheme;
   /** Placeholder text (the placeholder extension consumes this). */
   placeholder?: string;
   /** Auto-focus on mount. */

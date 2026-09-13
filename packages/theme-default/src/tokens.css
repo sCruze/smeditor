@@ -1,15 +1,11 @@
 /* SMEditor default theme tokens.
  *
- * Two ways to pick a theme:
+ * Theme selection:
  *
- *   1. Do nothing → the editor follows `prefers-color-scheme`.
- *   2. Set `data-theme="light"` or `data-theme="dark"` on any element
- *      that wraps the editor (or on <html>). The explicit attribute
- *      wins over the media query.
- *
- * Why both: developers want auto for new users (matches the rest of
- * their app), but a theme toggle in product UI needs explicit control
- * that survives reloads. Supporting both lets either pattern work.
+ *   1. Do nothing → light theme.
+ *   2. Set `data-theme="light"` or `data-theme="dark"` on the editor or
+ *      on an ancestor. SMEditor sets `data-theme="light"` by default when
+ *      initialized without a theme option.
  */
 
 /* ---------------------------------------------------------------------------
@@ -84,8 +80,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Dark theme — applied when explicitly tagged, OR via media query when
- * no explicit theme is set on the document.
+ * Dark theme — applied only when explicitly tagged.
  * ------------------------------------------------------------------------ */
 [data-theme="dark"] {
   --sme-color-surface: #0f1115;
@@ -104,28 +99,4 @@
   --sme-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
   --sme-shadow-md: 0 10px 38px -10px rgba(0, 0, 0, 0.5),
     0 10px 20px -15px rgba(0, 0, 0, 0.45);
-}
-
-/* Auto-dark: only when the document root has no explicit override. The
- * `:not([data-theme])` guard means a `data-theme="light"` setting on
- * any ancestor wins, even at night. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --sme-color-surface: #0f1115;
-    --sme-color-surface-muted: #1a1d23;
-    --sme-color-border: #2a2d35;
-    --sme-color-border-strong: #3a3f49;
-    --sme-color-text: #e7e9ee;
-    --sme-color-text-muted: #9aa0aa;
-    --sme-color-placeholder: #5c606b;
-    --sme-color-accent: #a78bfa;
-    --sme-color-accent-soft: #2a1d54;
-    --sme-color-primary: var(--sme-color-accent);
-    --sme-color-focus: #c4b5fd;
-    --sme-color-danger: #fca5a5;
-    --sme-color-danger-soft: #451a1a;
-    --sme-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-    --sme-shadow-md: 0 10px 38px -10px rgba(0, 0, 0, 0.5),
-      0 10px 20px -15px rgba(0, 0, 0, 0.45);
-  }
 }

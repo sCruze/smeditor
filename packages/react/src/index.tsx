@@ -146,6 +146,7 @@ export * as icons from "./icons.js";
 export type {
   EditorInstance,
   EditorOptions,
+  EditorTheme,
   EditorSelection,
   DocumentJSON,
   DocumentNode,
