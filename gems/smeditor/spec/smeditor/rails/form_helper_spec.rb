@@ -39,8 +39,13 @@ RSpec.describe SMEditor::Rails::FormHelper do
 
     it "can skip automatic assets" do
       html = view.smeditor_editor(form, :content, include_assets: false)
-      expect(html).not_to include("smeditor.css")
+      # No <link>/<script> tags are emitted…
+      expect(html).not_to include("<link")
+      expect(html).not_to include("<script")
       expect(html).not_to include("smeditor.js")
+      # …but the mount still points at the stylesheet: the editor's
+      # Shadow DOM loads it itself, since page styles don't reach inside.
+      expect(html).to include("data-smeditor-stylesheet=")
     end
 
     it "emits a hidden field seeded with the current value" do
