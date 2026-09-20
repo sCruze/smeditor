@@ -23,9 +23,10 @@ const ICONS = {
     code: '<path d="m6 5-3 3 3 3"/><path d="m10 5 3 3-3 3"/>',
     eraser: '<path d="m9 3 5 5-6 6H4l-1-1z"/><path d="m6 6 5 5"/><path d="M9 14h5"/>',
     link: '<path d="M7 9a3 3 0 0 0 4 0l2-2a3 3 0 1 0-4-4L8 4"/><path d="M9 7a3 3 0 0 0-4 0l-2 2a3 3 0 1 0 4 4l1-1"/>',
-    highlight: '<path d="M3 13l3-1 6-6-2-2-6 6z"/><path d="M2 14h12"/>',
-    textColor: '<text x="3" y="11" font-size="9" font-weight="700" fill="currentColor" stroke="none">A</text><rect x="3" y="13" width="10" height="2" fill="currentColor" stroke="none"/>',
-    background: '<rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 2l12 12"/>',
+    highlight: '<path d="M3.5 11.5l2.5-.8 6-6-1.7-1.7-6 6z"/><path d="M9 4.3l1.7 1.7"/>',
+    textColor: '<path d="M4 12 8 2.5 12 12"/><path d="M5.6 8.5h4.8"/>',
+    underlineColor: '<path d="M4.5 2.5v4.5a3.5 3.5 0 0 0 7 0V2.5"/>',
+    background: '<path d="M3 7.5 7.5 3l5 5-4.5 4.5z"/><path d="M13 11.2c0 .8-.5 1.3-1 1.3s-1-.5-1-1.3.5-1.5 1-2.2c.5.7 1 1.4 1 2.2z" fill="currentColor"/>',
     blockquote: '<path d="M3 5v3c0 1.5-.7 2.5-2 3"/><path d="M9 5v3c0 1.5-.7 2.5-2 3"/>',
     codeBlock: '<rect x="1.5" y="3" width="13" height="10" rx="1.5"/><path d="m5 6.5-2 1.5 2 1.5"/><path d="m11 6.5 2 1.5-2 1.5"/>',
     hr: '<path d="M2 8h12"/><path d="M2 4h8"/><path d="M2 12h6"/>',
@@ -90,7 +91,7 @@ function kitExtensions(kit, uploadUrl) {
     const upload = uploadHandler(uploadUrl);
     if (!upload)
         return [...base];
-    return base.map((extension) => extension.name === "image" ? starter_kit_1.ImageExtension.configure({ upload }) : extension);
+    return base.map((extension) => extension.name === "image" && starter_kit_1.ImageExtension.configure ? starter_kit_1.ImageExtension.configure({ upload }) : extension);
 }
 function run(editor, command, ...args) {
     const fn = editor.commands[command];
@@ -127,6 +128,7 @@ function commandButton(editor, iconName, title, command, active, label) {
             const value = active();
             el.dataset.active = value ? "true" : "false";
             el.classList.toggle("is-active", value);
+            el.setAttribute("aria-pressed", String(value));
         }
     };
     el.__smeditorRefresh = refresh;
@@ -145,10 +147,13 @@ function dropdown(ariaLabel, triggerContent, items, options = {}) {
     trigger.title = ariaLabel;
     const label = document.createElement("span");
     label.className = "smeditor-dropdown__label";
-    if (typeof triggerContent === "string")
+    if (typeof triggerContent === "string") {
+        label.classList.add("smeditor-dropdown__label--text");
         label.textContent = triggerContent;
+    }
     else
         label.appendChild(triggerContent);
+    let currentIcon = "";
     trigger.appendChild(label);
     let summary = null;
     if (options.summary) {
@@ -179,7 +184,7 @@ function dropdown(ariaLabel, triggerContent, items, options = {}) {
         menu.className = "smeditor-dropdown__menu" + (options.align === "right" ? " is-right" : "");
         menu.setAttribute("role", "menu");
         menu.setAttribute("aria-label", ariaLabel);
-        for (const spec of items()) {
+        for (const spec of items(close)) {
             if (spec.separatorBefore) {
                 const sep = document.createElement("div");
                 sep.className = "smeditor-dropdown__separator";
@@ -230,6 +235,11 @@ function dropdown(ariaLabel, triggerContent, items, options = {}) {
             menu.appendChild(item);
         }
         wrapper.appendChild(menu);
+        // Keep the popover on screen: flip it to the trigger's right edge
+        // when it would overflow the viewport (last toolbar items, bubble).
+        if (options.align !== "right" && menu.getBoundingClientRect().right > window.innerWidth - 8) {
+            menu.classList.add("is-right");
+        }
     };
     trigger.addEventListener("mousedown", (event) => event.preventDefault());
     trigger.addEventListener("click", (event) => {
@@ -245,8 +255,22 @@ function dropdown(ariaLabel, triggerContent, items, options = {}) {
     };
     document.addEventListener("pointerdown", outside, true);
     const refresh = () => {
+        var _a;
         if (summary && options.summary)
             summary.textContent = options.summary();
+        if (options.labelText) {
+            const text = options.labelText();
+            label.textContent = text;
+            trigger.title = `${ariaLabel}: ${text}`;
+        }
+        if (options.icon) {
+            const name = options.icon();
+            if (name !== currentIcon) {
+                currentIcon = name;
+                label.replaceChildren(svgIcon(name));
+            }
+        }
+        (_a = options.decorate) === null || _a === void 0 ? void 0 : _a.call(options, trigger);
         if (options.active) {
             const value = options.active();
             trigger.dataset.active = value ? "true" : "false";
@@ -254,42 +278,128 @@ function dropdown(ariaLabel, triggerContent, items, options = {}) {
         }
     };
     wrapper.__smeditorRefresh = refresh;
+    wrapper.__smeditorClose = close;
     wrapper.__smeditorDispose = () => document.removeEventListener("pointerdown", outside, true);
     refresh();
     return wrapper;
 }
-function colorDropdown(editor, ariaLabel, iconName, markName, setCommand, unsetCommand, extraAttrs = {}) {
-    const colors = [
-        "#1a1a1f", "#6b7280", "#ef4444", "#f97316", "#eab308",
-        "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899",
-        "#ffffff", "#d1d5db", "#fecaca", "#fed7aa", "#fef08a",
-        "#bbf7d0", "#a5f3fc", "#bfdbfe", "#ddd6fe", "#fbcfe8",
-    ];
-    return dropdown(ariaLabel, svgIcon(iconName), () => {
+const PALETTE = [
+    "#1a1a1f", "#6b7280", "#ef4444", "#f97316", "#eab308",
+    "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899",
+    "#ffffff", "#d1d5db", "#fecaca", "#fed7aa", "#fef08a",
+    "#bbf7d0", "#a5f3fc", "#bfdbfe", "#ddd6fe", "#fbcfe8",
+];
+/** Text colour options on a fill; null = automatic contrast. */
+const FILL_TEXT = [["Auto", null], ["White", "#ffffff"], ["Dark", "#1a1a1f"]];
+function sameColor(a, b) {
+    return typeof a === "string" && typeof b === "string" && a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+/**
+ * The text colour the user chose for a fill: null when it is the
+ * automatic contrast colour for the current fill (so re-filling with a
+ * new colour keeps the text readable), otherwise the explicit colour.
+ */
+function fillTextChoice(attrs) {
+    const fill = typeof (attrs === null || attrs === void 0 ? void 0 : attrs.color) === "string" ? attrs.color : null;
+    const text = typeof (attrs === null || attrs === void 0 ? void 0 : attrs.textColor) === "string" ? attrs.textColor : null;
+    return fill && text && !sameColor(text, (0, core_1.contrastTextColor)(fill)) ? text : null;
+}
+function panelButton(text, className, action) {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = className;
+    el.textContent = text;
+    el.addEventListener("mousedown", (event) => event.preventDefault());
+    el.addEventListener("click", action);
+    return el;
+}
+/**
+ * Colour picker dropdown. The trigger carries a bar filled with the colour
+ * applied to the current selection, the palette marks that colour, and a
+ * labelled "Remove" button clears it — so the state of the selection is
+ * always visible and every applied colour can be undone from here.
+ */
+function colorDropdown(editor, spec) {
+    const current = () => editor.getMarkAttributes(spec.mark);
+    const icon = document.createElement("span");
+    icon.className = "smeditor-color-trigger";
+    icon.appendChild(svgIcon(spec.icon));
+    const bar = document.createElement("span");
+    bar.className = "smeditor-color-trigger__bar";
+    icon.appendChild(bar);
+    const wrapper = dropdown(spec.label, icon, (close) => {
+        const attrs = current();
+        const panel = document.createElement("div");
+        panel.className = "smeditor-color-panel";
+        panel.setAttribute("role", "group");
+        panel.setAttribute("aria-label", spec.label);
+        const title = document.createElement("div");
+        title.className = "smeditor-color-panel__title";
+        title.textContent = spec.label;
+        panel.appendChild(title);
         const grid = document.createElement("div");
         grid.className = "smeditor-color-grid";
-        grid.setAttribute("role", "group");
-        const clear = document.createElement("button");
-        clear.type = "button";
-        clear.className = "smeditor-color-grid__swatch smeditor-color-grid__swatch--clear";
-        clear.title = `Clear ${ariaLabel.toLowerCase()}`;
-        clear.setAttribute("aria-label", clear.title);
-        clear.addEventListener("mousedown", (e) => e.preventDefault());
-        clear.addEventListener("click", () => run(editor, unsetCommand));
-        grid.appendChild(clear);
-        for (const color of colors) {
+        for (const color of PALETTE) {
             const swatch = document.createElement("button");
             swatch.type = "button";
             swatch.className = "smeditor-color-grid__swatch";
             swatch.style.backgroundColor = color;
             swatch.title = color;
-            swatch.setAttribute("aria-label", `${ariaLabel}: ${color}`);
-            swatch.addEventListener("mousedown", (e) => e.preventDefault());
-            swatch.addEventListener("click", () => run(editor, setCommand, { color, ...extraAttrs }));
+            swatch.setAttribute("aria-label", `${spec.label}: ${color}`);
+            const selected = sameColor(attrs === null || attrs === void 0 ? void 0 : attrs.color, color);
+            swatch.classList.toggle("is-active", selected);
+            swatch.setAttribute("aria-pressed", String(selected));
+            swatch.addEventListener("mousedown", (event) => event.preventDefault());
+            swatch.addEventListener("click", () => {
+                run(editor, spec.set, spec.textOn ? { color, textColor: fillTextChoice(attrs) } : { color });
+                close();
+            });
             grid.appendChild(swatch);
         }
-        return [{ label: "", content: grid }];
-    }, { active: () => editor.isActive(markName) });
+        panel.appendChild(grid);
+        if (spec.textOn) {
+            const label = document.createElement("div");
+            label.className = "smeditor-color-panel__title";
+            label.textContent = spec.textOn;
+            const chips = document.createElement("div");
+            chips.className = "smeditor-color-panel__widths";
+            const choice = fillTextChoice(attrs);
+            for (const [text, value] of FILL_TEXT) {
+                const chip = panelButton(text, "smeditor-color-panel__chip", () => {
+                    var _a;
+                    run(editor, spec.set, { color: (_a = attrs === null || attrs === void 0 ? void 0 : attrs.color) !== null && _a !== void 0 ? _a : PALETTE[7], textColor: value });
+                    close();
+                });
+                if (value)
+                    chip.style.setProperty("--sme-chip-swatch", value);
+                chip.setAttribute("aria-label", `${spec.textOn}: ${text}`);
+                const selected = Boolean(attrs) && choice === value;
+                chip.classList.toggle("is-active", selected);
+                chip.setAttribute("aria-pressed", String(selected));
+                chips.appendChild(chip);
+            }
+            panel.append(label, chips);
+        }
+        const clear = panelButton(`Remove ${spec.label.toLowerCase()}`, "smeditor-color-panel__clear", () => {
+            run(editor, spec.unset);
+            close();
+        });
+        clear.disabled = !(attrs === null || attrs === void 0 ? void 0 : attrs.color);
+        panel.appendChild(clear);
+        return [{ label: "", content: panel }];
+    }, {
+        active: () => { var _a; return Boolean((_a = current()) === null || _a === void 0 ? void 0 : _a.color); },
+        decorate: (trigger) => {
+            var _a;
+            const color = (_a = current()) === null || _a === void 0 ? void 0 : _a.color;
+            const value = typeof color === "string" ? color : "";
+            bar.style.backgroundColor = value;
+            bar.dataset.empty = value ? "false" : "true";
+            trigger.title = value ? `${spec.label}: ${value}` : spec.label;
+        },
+    });
+    wrapper.classList.add("smeditor-dropdown--color");
+    return wrapper;
 }
 function blockTypeSummary(editor) {
     if ((0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "blockquote"))
@@ -339,11 +449,81 @@ function tablePicker(editor) {
         return [{ label: "", content: box }];
     });
 }
-function textDropdown(editor, ariaLabel, label, values, command, unset) {
-    return dropdown(ariaLabel, label, () => values.map(([text, value]) => ({
-        label: text,
-        action: () => value === null && unset ? run(editor, unset) : run(editor, command, { [command === "setFontFamily" ? "family" : command === "setFontSize" ? "size" : "value"]: value }),
-    })));
+function normalizeValue(value) {
+    return String(value !== null && value !== void 0 ? value : "").replace(/["'\s]/g, "").toLowerCase();
+}
+/**
+ * Value picker (font family, size, line height). The trigger shows the
+ * value applied to the selection instead of a generic caption, and the
+ * matching menu item is marked as checked.
+ */
+function valueDropdown(spec) {
+    const selected = () => {
+        const value = spec.current();
+        const match = value === null ? null : spec.values.find(([, v]) => v !== null && normalizeValue(v) === normalizeValue(value));
+        const name = match ? match[0].split(" · ")[0] : value;
+        return { value, label: spec.showValue ? value : name };
+    };
+    return dropdown(spec.ariaLabel, spec.placeholder, () => {
+        const { value } = selected();
+        return spec.values.map(([text, v]) => ({
+            label: text,
+            active: () => (v === null ? value === null : value !== null && normalizeValue(v) === normalizeValue(value)),
+            action: () => spec.apply(v),
+        }));
+    }, {
+        labelText: () => { var _a; return (_a = selected().label) !== null && _a !== void 0 ? _a : spec.placeholder; },
+        active: () => spec.current() !== null,
+    });
+}
+function markValue(editor, mark, attr) {
+    var _a;
+    const value = (_a = editor.getMarkAttributes(mark)) === null || _a === void 0 ? void 0 : _a[attr];
+    return typeof value === "string" && value ? value : null;
+}
+function blockValue(editor, attr) {
+    const value = (0, core_1.getBlockAttr)(editor.getJSON(), editor.getSelection(), attr);
+    return typeof value === "string" && value ? value : null;
+}
+function currentAlign(editor) {
+    var _a;
+    return (_a = blockValue(editor, "textAlign")) !== null && _a !== void 0 ? _a : "left";
+}
+function currentListIcon(editor) {
+    const inside = (name) => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), name);
+    if (inside("task_list"))
+        return "task";
+    if (inside("ordered_list"))
+        return "ordered";
+    return "bullet";
+}
+function inlineMarkButtons(editor) {
+    const buttons = [
+        commandButton(editor, "bold", "Bold", () => run(editor, "toggleBold"), () => editor.isActive("bold")),
+        commandButton(editor, "italic", "Italic", () => run(editor, "toggleItalic"), () => editor.isActive("italic")),
+        commandButton(editor, "underline", "Underline", () => run(editor, "toggleUnderline"), () => editor.isActive("underline")),
+        commandButton(editor, "strike", "Strike-through", () => run(editor, "toggleStrike"), () => editor.isActive("strike")),
+    ];
+    return buttons;
+}
+function linkButton(editor) {
+    return commandButton(editor, "link", "Link", () => {
+        if (editor.isActive("link"))
+            return run(editor, "unsetLink");
+        const href = window.prompt("Link URL", "https://");
+        return href ? run(editor, "setLink", { href }) : false;
+    }, () => editor.isActive("link"));
+}
+const COLOR_SPECS = [
+    { label: "Text color", icon: "textColor", mark: "text_color", set: "setTextColor", unset: "unsetTextColor" },
+    { label: "Fill", icon: "background", mark: "background_color", set: "setBackgroundColor", unset: "unsetBackgroundColor", textOn: "Text on fill" },
+    { label: "Highlight", icon: "highlight", mark: "highlight", set: "setHighlight", unset: "unsetHighlight", textOn: "Text on highlight" },
+    { label: "Underline color", icon: "underlineColor", mark: "underline", set: "setUnderlineColor", unset: "unsetUnderlineColor" },
+];
+function colorDropdowns(editor, marks) {
+    return COLOR_SPECS
+        .filter((spec) => marks.includes(spec.mark) && hasCommand(editor, spec.set) && hasCommand(editor, spec.unset))
+        .map((spec) => colorDropdown(editor, spec));
 }
 function buildToolbar(editor, kit, uploadUrl) {
     const toolbar = document.createElement("div");
@@ -368,22 +548,26 @@ function buildToolbar(editor, kit, uploadUrl) {
         { label: "Bullet List", icon: "bullet", shortcut: "⌘⇧8", active: () => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "bullet_list"), action: () => run(editor, "toggleBulletList") },
         { label: "Ordered List", icon: "ordered", shortcut: "⌘⇧7", active: () => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "ordered_list"), action: () => run(editor, "toggleOrderedList") },
         { label: "Task List", icon: "task", shortcut: "⌘⇧9", active: () => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "task_list"), action: () => run(editor, "toggleTaskList") },
-    ], { active: () => ["bullet_list", "ordered_list", "task_list"].some((name) => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), name)) });
+    ], {
+        icon: () => currentListIcon(editor),
+        active: () => ["bullet_list", "ordered_list", "task_list"].some((name) => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), name)),
+    });
     add(block, lists, divider());
-    add(commandButton(editor, "bold", "Bold", () => run(editor, "toggleBold"), () => editor.isActive("bold")), commandButton(editor, "italic", "Italic", () => run(editor, "toggleItalic"), () => editor.isActive("italic")), commandButton(editor, "strike", "Strike-through", () => run(editor, "toggleStrike"), () => editor.isActive("strike")), commandButton(editor, "underline", "Underline", () => run(editor, "toggleUnderline"), () => editor.isActive("underline")), commandButton(editor, "eraser", "Clear formatting", () => run(editor, "clearFormatting")), commandButton(editor, "link", "Link", () => {
-        if (editor.isActive("link"))
-            return run(editor, "unsetLink");
-        const href = window.prompt("Link URL", "https://");
-        return href ? run(editor, "setLink", { href }) : false;
-    }, () => editor.isActive("link")), divider());
+    add(...inlineMarkButtons(editor), commandButton(editor, "eraser", "Clear formatting", () => run(editor, "clearFormatting")), linkButton(editor), divider());
+    const alignItem = (label, icon, align) => ({
+        label, icon, active: () => currentAlign(editor) === align, action: () => run(editor, "setTextAlign", { align }),
+    });
     const align = dropdown("Alignment", svgIcon("alignLeft"), () => [
-        { label: "Left", icon: "alignLeft", active: () => editor.isActive("text_align", { align: "left" }), action: () => run(editor, "setTextAlign", { align: "left" }) },
-        { label: "Center", icon: "alignCenter", active: () => editor.isActive("text_align", { align: "center" }), action: () => run(editor, "setTextAlign", { align: "center" }) },
-        { label: "Right", icon: "alignRight", active: () => editor.isActive("text_align", { align: "right" }), action: () => run(editor, "setTextAlign", { align: "right" }) },
-        { label: "Justify", icon: "alignJustify", active: () => editor.isActive("text_align", { align: "justify" }), action: () => run(editor, "setTextAlign", { align: "justify" }) },
+        alignItem("Left", "alignLeft", "left"),
+        alignItem("Center", "alignCenter", "center"),
+        alignItem("Right", "alignRight", "right"),
+        alignItem("Justify", "alignJustify", "justify"),
         { label: "Increase indent", icon: "indent", action: () => run(editor, "indent"), separatorBefore: true },
         { label: "Decrease indent", icon: "outdent", action: () => run(editor, "outdent") },
-    ]);
+    ], {
+        icon: () => { var _a; return ((_a = { center: "alignCenter", right: "alignRight", justify: "alignJustify" }[currentAlign(editor)]) !== null && _a !== void 0 ? _a : "alignLeft"); },
+        active: () => currentAlign(editor) !== "left",
+    });
     add(align, divider());
     add(commandButton(editor, "blockquote", "Blockquote", () => run(editor, "toggleBlockquote"), () => (0, core_1.selectionInsideWrapper)(editor.getJSON(), editor.getSelection(), "blockquote")), commandButton(editor, "codeBlock", "Code block", () => run(editor, "setCodeBlock"), () => editor.isActive("code_block")), commandButton(editor, "hr", "Horizontal rule", () => run(editor, "insertHorizontalRule")));
     const image = dropdown("Insert image", svgIcon("image"), () => {
@@ -409,7 +593,28 @@ function buildToolbar(editor, kit, uploadUrl) {
     add(image, tablePicker(editor));
     if (kit === "full") {
         add(divider());
-        add(colorDropdown(editor, "Highlight", "highlight", "highlight", "setHighlight", "unsetHighlight"), colorDropdown(editor, "Text color", "textColor", "text_color", "setTextColor", "unsetTextColor"), colorDropdown(editor, "Text stroke", "textColor", "text_stroke", "setTextStroke", "unsetTextStroke", { width: 1 }), colorDropdown(editor, "Background color", "background", "background_color", "setBackgroundColor", "unsetBackgroundColor"), textDropdown(editor, "Font family", "Font", [["Default", null], ["Sans-serif", "ui-sans-serif, system-ui, sans-serif"], ["Serif", "ui-serif, Georgia, serif"], ["Monospace", "ui-monospace, Menlo, monospace"], ["Georgia", "Georgia, serif"], ["Courier", "'Courier New', monospace"]], "setFontFamily", "unsetFontFamily"), textDropdown(editor, "Font size", "Size", [["Default", null], ["Small · 13px", "13px"], ["Normal · 16px", "16px"], ["Large · 20px", "20px"], ["Huge · 28px", "28px"]], "setFontSize", "unsetFontSize"), textDropdown(editor, "Line height", "Spacing", [["Default", null], ["Tight · 1", "1"], ["Snug · 1.15", "1.15"], ["Normal · 1.5", "1.5"], ["Relaxed · 2", "2"]], "setLineHeight"));
+        add(...colorDropdowns(editor, ["text_color", "background_color", "highlight", "underline"]));
+        add(valueDropdown({
+            ariaLabel: "Font family",
+            placeholder: "Font",
+            values: [["Default", null], ["Sans-serif", "ui-sans-serif, system-ui, sans-serif"], ["Serif", "ui-serif, Georgia, serif"], ["Monospace", "ui-monospace, Menlo, monospace"], ["Georgia", "Georgia, serif"], ["Courier", "'Courier New', monospace"]],
+            current: () => markValue(editor, "font_family", "family"),
+            apply: (value) => (value === null ? run(editor, "unsetFontFamily") : run(editor, "setFontFamily", { family: value })),
+        }), valueDropdown({
+            ariaLabel: "Font size",
+            placeholder: "Size",
+            showValue: true,
+            values: [["Default", null], ["Small · 13px", "13px"], ["Normal · 16px", "16px"], ["Large · 20px", "20px"], ["Huge · 28px", "28px"]],
+            current: () => markValue(editor, "font_size", "size"),
+            apply: (value) => (value === null ? run(editor, "unsetFontSize") : run(editor, "setFontSize", { size: value })),
+        }), valueDropdown({
+            ariaLabel: "Line height",
+            placeholder: "Spacing",
+            showValue: true,
+            values: [["Default", null], ["Tight · 1", "1"], ["Snug · 1.15", "1.15"], ["Normal · 1.5", "1.5"], ["Relaxed · 2", "2"]],
+            current: () => blockValue(editor, "lineHeight"),
+            apply: (value) => run(editor, "setLineHeight", { value }),
+        }));
         if (hasCommand(editor, "addComment")) {
             add(commandButton(editor, "", "Comment", () => {
                 const body = window.prompt("New comment");
@@ -424,7 +629,7 @@ function buildToolbar(editor, kit, uploadUrl) {
             { label: "Superscript", icon: "superscript", active: () => editor.isActive("superscript"), action: () => run(editor, "toggleSuperscript") },
             { label: "Increase indent", icon: "indent", action: () => run(editor, "indent"), separatorBefore: true },
             { label: "Decrease indent", icon: "outdent", action: () => run(editor, "outdent") },
-        ], { align: "right" });
+        ], { align: "right", active: () => ["code", "subscript", "superscript"].some((mark) => editor.isActive(mark)) });
         add(more);
     }
     const refresh = () => {
@@ -477,24 +682,29 @@ function buildBubbleMenu(editor, surface, container) {
     menu.style.position = "absolute";
     menu.style.display = "none";
     menu.style.zIndex = "2147483000";
-    const buttons = [
-        commandButton(editor, "bold", "Bold", () => run(editor, "toggleBold"), () => editor.isActive("bold")),
-        commandButton(editor, "italic", "Italic", () => run(editor, "toggleItalic"), () => editor.isActive("italic")),
-        commandButton(editor, "underline", "Underline", () => run(editor, "toggleUnderline"), () => editor.isActive("underline")),
-        commandButton(editor, "strike", "Strike-through", () => run(editor, "toggleStrike"), () => editor.isActive("strike")),
-        commandButton(editor, "link", "Link", () => {
-            if (editor.isActive("link"))
-                return run(editor, "unsetLink");
-            const href = window.prompt("Link URL", "https://");
-            return href ? run(editor, "setLink", { href }) : false;
-        }, () => editor.isActive("link")),
-    ];
+    // Same controls (and the same live state) as the matching toolbar ones:
+    // inline marks, link, the colour pickers the kit provides, and a clear
+    // button that removes every inline style from the selection at once.
+    const buttons = [...inlineMarkButtons(editor)];
+    if (hasCommand(editor, "toggleCode")) {
+        buttons.push(commandButton(editor, "code", "Inline code", () => run(editor, "toggleCode"), () => editor.isActive("code")));
+    }
+    buttons.push(linkButton(editor));
+    const colors = colorDropdowns(editor, ["text_color", "background_color", "underline"]);
+    if (colors.length)
+        buttons.push(divider(), ...colors);
+    if (hasCommand(editor, "clearFormatting")) {
+        buttons.push(divider(), commandButton(editor, "eraser", "Clear formatting", () => run(editor, "clearFormatting")));
+    }
     menu.append(...buttons);
     // Keeping pointer-down inside the menu from focusing a button preserves the
     // editor's text selection, which the formatting command needs.
     menu.addEventListener("mousedown", (event) => event.preventDefault());
     let frame = 0;
     const hide = () => {
+        var _a, _b;
+        for (const button of buttons)
+            (_b = (_a = button).__smeditorClose) === null || _b === void 0 ? void 0 : _b.call(_a);
         menu.style.display = "none";
         menu.style.visibility = "hidden";
     };
@@ -533,8 +743,11 @@ function buildBubbleMenu(editor, surface, container) {
         let viewportLeft = anchor.left + anchor.width / 2 - rect.width / 2;
         const maxViewportLeft = Math.max(margin, viewportWidth - rect.width - margin);
         viewportLeft = Math.max(margin, Math.min(viewportLeft, maxViewportLeft));
+        // Never cover the main toolbar: when there is no room between the top
+        // of the writing surface and the selection, open below the selection.
+        const topLimit = Math.max(margin, surface.getBoundingClientRect().top);
         let viewportTop = anchor.top - rect.height - offset;
-        if (viewportTop < margin)
+        if (viewportTop < topLimit)
             viewportTop = anchor.bottom + offset;
         if (viewportTop + rect.height > viewportHeight - margin) {
             viewportTop = Math.max(margin, anchor.top - rect.height - offset);
@@ -552,7 +765,14 @@ function buildBubbleMenu(editor, surface, container) {
     const selectionTarget = selectionRoot && selectionRoot !== document
         ? selectionRoot
         : null;
+    const hideOnBlur = () => requestAnimationFrame(() => {
+        const active = surface.getRootNode().activeElement;
+        if (active !== surface && !menu.contains(active))
+            hide();
+    });
     const disposeSelection = editor.on("selectionUpdate", scheduleUpdate);
+    const disposeUpdate = editor.on("update", scheduleUpdate);
+    surface.addEventListener("blur", hideOnBlur);
     document.addEventListener("selectionchange", scheduleUpdate);
     selectionTarget === null || selectionTarget === void 0 ? void 0 : selectionTarget.addEventListener("selectionchange", scheduleUpdate);
     surface.addEventListener("pointerup", scheduleUpdate);
@@ -560,9 +780,14 @@ function buildBubbleMenu(editor, surface, container) {
     window.addEventListener("resize", scheduleUpdate);
     window.addEventListener("scroll", scheduleUpdate, true);
     menu.__smeditorDispose = () => {
+        var _a, _b;
         if (frame)
             cancelAnimationFrame(frame);
         disposeSelection();
+        disposeUpdate();
+        surface.removeEventListener("blur", hideOnBlur);
+        for (const button of buttons)
+            (_b = (_a = button).__smeditorDispose) === null || _b === void 0 ? void 0 : _b.call(_a);
         document.removeEventListener("selectionchange", scheduleUpdate);
         selectionTarget === null || selectionTarget === void 0 ? void 0 : selectionTarget.removeEventListener("selectionchange", scheduleUpdate);
         surface.removeEventListener("pointerup", scheduleUpdate);
@@ -701,8 +926,8 @@ if (typeof window !== "undefined") {
  * stay internal so we can evolve them without breaking consumers.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.selectionBlockRange = exports.normalizeDeepPoint = exports.resolveSelectionTarget = exports.removeNodeAt = exports.mapNodeAt = exports.descendToLeafPath = exports.parentAt = exports.nodeAt = exports.isContainerBlock = exports.isLeafBlock = exports.splitBlock = exports.removeMarkFromInlineRange = exports.setMarkOnInlineRange = exports.applyMarkToInlineRange = exports.replaceInlineRange = exports.deleteInlineRange = exports.insertInlineAt = exports.splitInlineAt = exports.blockVisibleText = exports.inlineLength = exports.visibleLength = exports.stripBlockPrefix = exports.getBlockText = exports.leafBlocksInSelection = exports.setBlockType = exports.clearMarksAcrossSelection = exports.unsetMarkAcrossSelection = exports.setMarkAcrossSelection = exports.toggleMarkInDoc = exports.selectionHasMark = exports.hasMark = exports.emptyDocument = exports.docsEqual = exports.cloneDoc = exports.EventEmitter = exports.History = exports.hardenLinkAttrs = exports.sanitizeLinkTarget = exports.sanitizeURL = exports.sanitizeCSSTextStrokeWidth = exports.sanitizeCSSLineHeight = exports.sanitizeCSSFontSize = exports.sanitizeCSSFontFamily = exports.sanitizeCSSColor = exports.escapeHTML = exports.parseHTML = exports.serializeToHTML = exports.flattenExtensions = exports.compileSchema = exports.createEditor = void 0;
-exports.VERSION = exports.getBlockAttr = exports.setBlockAttrs = exports.selectionInsideWrapper = exports.toggleWrap = exports.unwrapBlock = exports.wrapBlocks = void 0;
+exports.resolveSelectionTarget = exports.removeNodeAt = exports.mapNodeAt = exports.descendToLeafPath = exports.parentAt = exports.nodeAt = exports.isContainerBlock = exports.isLeafBlock = exports.splitBlock = exports.removeMarkFromInlineRange = exports.setMarkOnInlineRange = exports.applyMarkToInlineRange = exports.replaceInlineRange = exports.deleteInlineRange = exports.insertInlineAt = exports.splitInlineAt = exports.blockVisibleText = exports.inlineLength = exports.visibleLength = exports.stripBlockPrefix = exports.getBlockText = exports.leafBlocksInSelection = exports.setBlockType = exports.clearMarksAcrossSelection = exports.unsetMarkAcrossSelection = exports.setMarkAcrossSelection = exports.toggleMarkInDoc = exports.selectionMarkAttrs = exports.selectionHasMark = exports.hasMark = exports.emptyDocument = exports.docsEqual = exports.cloneDoc = exports.EventEmitter = exports.History = exports.hardenLinkAttrs = exports.sanitizeLinkTarget = exports.sanitizeURL = exports.sanitizeCSSTextStrokeWidth = exports.sanitizeCSSLineHeight = exports.sanitizeCSSFontSize = exports.sanitizeCSSFontFamily = exports.contrastTextColor = exports.sanitizeCSSColor = exports.escapeHTML = exports.parseHTML = exports.serializeToHTML = exports.flattenExtensions = exports.compileSchema = exports.createEditor = void 0;
+exports.VERSION = exports.getBlockAttr = exports.setBlockAttrs = exports.selectionInsideWrapper = exports.toggleWrap = exports.unwrapBlock = exports.wrapBlocks = exports.selectionBlockRange = exports.normalizeDeepPoint = void 0;
 var editor_js_1 = require("./editor.js");
 Object.defineProperty(exports, "createEditor", { enumerable: true, get: function () { return editor_js_1.createEditor; } });
 var schema_js_1 = require("./schema.js");
@@ -714,6 +939,7 @@ Object.defineProperty(exports, "parseHTML", { enumerable: true, get: function ()
 Object.defineProperty(exports, "escapeHTML", { enumerable: true, get: function () { return serializer_js_1.escapeHTML; } });
 var css_js_1 = require("./css.js");
 Object.defineProperty(exports, "sanitizeCSSColor", { enumerable: true, get: function () { return css_js_1.sanitizeCSSColor; } });
+Object.defineProperty(exports, "contrastTextColor", { enumerable: true, get: function () { return css_js_1.contrastTextColor; } });
 Object.defineProperty(exports, "sanitizeCSSFontFamily", { enumerable: true, get: function () { return css_js_1.sanitizeCSSFontFamily; } });
 Object.defineProperty(exports, "sanitizeCSSFontSize", { enumerable: true, get: function () { return css_js_1.sanitizeCSSFontSize; } });
 Object.defineProperty(exports, "sanitizeCSSLineHeight", { enumerable: true, get: function () { return css_js_1.sanitizeCSSLineHeight; } });
@@ -731,6 +957,7 @@ Object.defineProperty(exports, "docsEqual", { enumerable: true, get: function ()
 Object.defineProperty(exports, "emptyDocument", { enumerable: true, get: function () { return doc_utils_js_1.emptyDocument; } });
 Object.defineProperty(exports, "hasMark", { enumerable: true, get: function () { return doc_utils_js_1.hasMark; } });
 Object.defineProperty(exports, "selectionHasMark", { enumerable: true, get: function () { return doc_utils_js_1.selectionHasMark; } });
+Object.defineProperty(exports, "selectionMarkAttrs", { enumerable: true, get: function () { return doc_utils_js_1.selectionMarkAttrs; } });
 Object.defineProperty(exports, "toggleMarkInDoc", { enumerable: true, get: function () { return doc_utils_js_1.toggleMarkInDoc; } });
 Object.defineProperty(exports, "setMarkAcrossSelection", { enumerable: true, get: function () { return doc_utils_js_1.setMarkAcrossSelection; } });
 Object.defineProperty(exports, "unsetMarkAcrossSelection", { enumerable: true, get: function () { return doc_utils_js_1.unsetMarkAcrossSelection; } });
@@ -1078,6 +1305,11 @@ class Editor {
             }
         }
         return map;
+    }
+    getMarkAttributes(name) {
+        if (!this.schema.marks[name])
+            return null;
+        return (0, doc_utils_js_1.selectionMarkAttrs)(this.doc, this.selection, name);
     }
     isActive(name, attrs) {
         var _a, _b;
@@ -1696,6 +1928,8 @@ function sanitizePastedStyleValue(name, value) {
     if (name === "background-color" || name === "background") {
         return (0, css_js_1.sanitizeCSSColor)(value);
     }
+    if (name === "text-decoration-color")
+        return (0, css_js_1.sanitizeCSSColor)(value);
     if (name === "font-family")
         return (0, css_js_1.sanitizeCSSFontFamily)(value);
     if (name === "font-size")
@@ -2077,33 +2311,66 @@ exports.parseHTML = parseHTML;
 function serializeToHTML(doc, schema) {
     if (!doc || doc.type !== "doc" || !doc.content)
         return "";
-    return doc.content.map((node) => renderNode(node, schema)).join("");
+    return renderChildren(doc.content, schema);
+}
+/**
+ * Marks of a node in a stable outer→inner order (`rank`, then schema
+ * registration order). A fixed order means `<mark><span style="color">` never flips
+ * to `<span style="color"><mark>` between renders, which used to make
+ * the DOM churn (and the caret jump) after every formatting change.
+ */
+function orderedMarks(node, schema) {
+    var _a;
+    const order = Object.keys(schema.marks);
+    return ((_a = node.marks) !== null && _a !== void 0 ? _a : [])
+        .filter((mark) => { var _a; return Boolean((_a = schema.marks[mark.type]) === null || _a === void 0 ? void 0 : _a.toDOM); })
+        .sort((a, b) => {
+        var _a, _b;
+        return ((_a = schema.marks[a.type].rank) !== null && _a !== void 0 ? _a : 0) - ((_b = schema.marks[b.type].rank) !== null && _b !== void 0 ? _b : 0) ||
+            order.indexOf(a.type) - order.indexOf(b.type);
+    });
+}
+function markKey(mark) {
+    var _a;
+    return mark ? `${mark.type}:${JSON.stringify((_a = mark.attrs) !== null && _a !== void 0 ? _a : {})}` : "";
+}
+/**
+ * Render sibling nodes, merging runs that share the same mark into one
+ * element: "a", "b" both highlighted render as `<mark>ab</mark>`, not
+ * `<mark>a</mark><mark>b</mark>` (which showed visible seams between the
+ * pieces of one highlight / background / outline).
+ */
+function renderChildren(nodes, schema, depth = 0) {
+    let out = "";
+    let i = 0;
+    while (i < nodes.length) {
+        const mark = orderedMarks(nodes[i], schema)[depth];
+        if (!mark) {
+            out += renderNode(nodes[i], schema);
+            i += 1;
+            continue;
+        }
+        const key = markKey(mark);
+        let j = i + 1;
+        while (j < nodes.length && markKey(orderedMarks(nodes[j], schema)[depth]) === key)
+            j += 1;
+        const inner = renderChildren(nodes.slice(i, j), schema, depth + 1);
+        out += wrapWithSpec(schema.marks[mark.type].toDOM(mark), inner);
+        i = j;
+    }
+    return out;
 }
 function renderNode(node, schema) {
     var _a, _b, _c;
-    if (node.type === "text") {
-        let html = escapeHTML((_a = node.text) !== null && _a !== void 0 ? _a : "");
-        // Wrap text in mark elements, innermost first.
-        if (node.marks && node.marks.length > 0) {
-            for (const mark of node.marks) {
-                const spec = schema.marks[mark.type];
-                if (!(spec === null || spec === void 0 ? void 0 : spec.toDOM))
-                    continue;
-                html = wrapWithSpec(spec.toDOM(mark), html);
-            }
-        }
-        return html;
-    }
+    // Marks are applied by renderChildren, which groups equal neighbours.
+    if (node.type === "text")
+        return escapeHTML((_a = node.text) !== null && _a !== void 0 ? _a : "");
     const spec = schema.nodes[node.type];
     if (!(spec === null || spec === void 0 ? void 0 : spec.toDOM)) {
         // Unknown node — render children if any.
-        return ((_b = node.content) !== null && _b !== void 0 ? _b : [])
-            .map((c) => renderNode(c, schema))
-            .join("");
+        return renderChildren((_b = node.content) !== null && _b !== void 0 ? _b : [], schema);
     }
-    let inner = ((_c = node.content) !== null && _c !== void 0 ? _c : [])
-        .map((c) => renderNode(c, schema))
-        .join("");
+    let inner = renderChildren((_c = node.content) !== null && _c !== void 0 ? _c : [], schema);
     // An empty leaf block (a blank paragraph, an empty table cell) must
     // still render with a <br> inside it — otherwise the element
     // collapses to zero height in contenteditable and the caret can't
@@ -2853,6 +3120,7 @@ exports.stripBlockPrefix = stripBlockPrefix;
 exports.forEachTextNode = forEachTextNode;
 exports.hasMark = hasMark;
 exports.selectionHasMark = selectionHasMark;
+exports.selectionMarkAttrs = selectionMarkAttrs;
 exports.textsInSelection = textsInSelection;
 exports.toggleMarkInDoc = toggleMarkInDoc;
 exports.setMarkAcrossSelection = setMarkAcrossSelection;
@@ -2989,6 +3257,23 @@ function selectionHasMark(doc, selection, type, attrs) {
         return false;
     return texts.every((t) => hasMark(t, type, attrs));
 }
+/**
+ * Attributes of a mark shared by the whole selection (the word under a
+ * bare caret). Returns the attrs of the first matching mark when every
+ * selected text node carries a mark of `type`, otherwise null. Toolbars
+ * use it to show the current colour / font / size of the selection.
+ */
+function selectionMarkAttrs(doc, selection, type) {
+    var _a;
+    if (!selection)
+        return null;
+    const texts = leafRangesInSelection(doc, selection).flatMap(({ node, from, to }) => { var _a; return textNodesInInlineRange((_a = node.content) !== null && _a !== void 0 ? _a : [], from, to); });
+    const marks = texts.map((t) => { var _a, _b; return (_b = (_a = t.marks) === null || _a === void 0 ? void 0 : _a.find((m) => m.type === type)) !== null && _b !== void 0 ? _b : null; });
+    const first = marks[0];
+    if (!first || marks.some((m) => m === null))
+        return null;
+    return { ...((_a = first.attrs) !== null && _a !== void 0 ? _a : {}) };
+}
 /** Collect every text node intersecting the selection. */
 function textsInSelection(doc, selection) {
     const result = [];
@@ -3101,9 +3386,8 @@ function toggleMarkInDoc(doc, selection, type, attrs) {
  * Behaviour:
  *  - a real range  → the mark is set on just that span, replacing any
  *    existing mark of the same type so colours/sizes swap cleanly;
- *  - a collapsed caret → the mark is applied to the whole block the
- *    caret sits in, so a toolbar click with no selection still does
- *    something predictable.
+ *  - a collapsed caret → the mark is applied to the word under the
+ *    caret (the whole block only when no word is there).
  *
  * Returns a new document, or null when nothing changed.
  */
@@ -3174,8 +3458,12 @@ function leafRangesInSelection(doc, selection) {
         let from;
         let to;
         if (collapsed) {
-            from = 0;
-            to = len;
+            // A bare caret targets the word it sits in (or touches), like
+            // Google Docs / Word. Only when there is no word under the caret
+            // (empty block, caret between spaces) does the whole block apply.
+            const word = wordRangeAt(node, Math.min(start.offset, len));
+            from = word ? word[0] : 0;
+            to = word ? word[1] : len;
         }
         else {
             const isStart = samePath(path, start.path);
@@ -3186,6 +3474,21 @@ function leafRangesInSelection(doc, selection) {
         return { path, node, from, to };
     })
         .filter(({ from, to }) => to > from);
+}
+const WORD_CHAR = /[\p{L}\p{N}_'\u2019-]/u;
+/**
+ * The [from, to) visible-offset range of the word at `offset` in a leaf
+ * block, or null when the caret touches no word characters.
+ */
+function wordRangeAt(block, offset) {
+    const text = (0, transform_js_1.blockVisibleText)(block);
+    let from = Math.max(0, Math.min(offset, text.length));
+    let to = from;
+    while (from > 0 && WORD_CHAR.test(text[from - 1]))
+        from--;
+    while (to < text.length && WORD_CHAR.test(text[to]))
+        to++;
+    return to > from ? [from, to] : null;
 }
 function inlineContentLength(content) {
     // Use the same visible-width measure as splitInlineAt / setMarkOnInlineRange:
@@ -3724,6 +4027,7 @@ exports.sanitizeCSSTextStrokeWidth = sanitizeCSSTextStrokeWidth;
 exports.sanitizeURL = sanitizeURL;
 exports.sanitizeLinkTarget = sanitizeLinkTarget;
 exports.hardenLinkAttrs = hardenLinkAttrs;
+exports.contrastTextColor = contrastTextColor;
 const MAX_COLOR_LENGTH = 80;
 const HEX_COLOR = /^#[0-9a-fA-F]{3,8}$/;
 const CSS_IDENTIFIER = /^[a-zA-Z]+$/;
@@ -3918,6 +4222,33 @@ function normaliseProtocols(protocols) {
     return new Set(protocols
         .map((protocol) => protocol.trim().replace(/:$/, "").toLowerCase())
         .filter(Boolean));
+}
+const LIGHT_TEXT = "#ffffff";
+const DARK_TEXT = "#1a1a1f";
+function rgbChannels(color) {
+    const hex = /^#([0-9a-f]{3,8})$/i.exec(color);
+    if (hex) {
+        const raw = hex[1];
+        const full = raw.length <= 4 ? raw.slice(0, 3).split("").map((c) => c + c).join("") : raw.slice(0, 6);
+        return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+    }
+    const rgb = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i.exec(color);
+    return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null;
+}
+/**
+ * A text colour that stays readable on `fill`: white on dark fills,
+ * near-black on light ones (WCAG relative luminance). Formats it can't
+ * measure (named colours, hsl) get white.
+ */
+function contrastTextColor(fill) {
+    const rgb = rgbChannels(String(fill).trim());
+    if (!rgb)
+        return LIGHT_TEXT;
+    const [r, g, b] = rgb.map((v) => {
+        const c = v / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? DARK_TEXT : LIGHT_TEXT;
 }
 
 },{}],
@@ -4580,21 +4911,51 @@ exports.default = exports.ItalicExtension;
 /**
  * @smeditor/extension-underline
  *
- * Renders to `<u>`; parses both `<u>` and the legacy CSS form
+ * Renders to `<u>`, or `<u style="text-decoration-color: …">` when the
+ * underline has its own colour; parses both `<u>` and the legacy CSS form
  * `<span style="text-decoration: underline">`. Shortcut: Mod-u.
+ *
+ * The underline renders innermost (rank 2), so an uncoloured underline
+ * follows the colour of the text it sits under.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UnderlineExtension = void 0;
 const core_1 = require("@smeditor/core");
+function decorationColor(style) {
+    const m = /(?:^|;)\s*text-decoration-color\s*:\s*([^;]+)/i.exec(style);
+    return m ? (0, core_1.sanitizeCSSColor)(m[1].trim()) : null;
+}
+function colorAttrs(el) {
+    var _a;
+    const color = decorationColor((_a = el.getAttribute("style")) !== null && _a !== void 0 ? _a : "");
+    return color ? { color } : {};
+}
+function applyUnderline(editor, color) {
+    const selection = editor.getSelection();
+    const next = (0, core_1.setMarkAcrossSelection)(editor.getJSON(), selection, {
+        type: "underline",
+        ...(color ? { attrs: { color } } : {}),
+    });
+    if (!next)
+        return false;
+    editor.dispatch({ doc: next, selection, addToHistory: true });
+    return true;
+}
 exports.UnderlineExtension = {
     name: "underline",
     marks: [
         {
             name: "underline",
             inclusive: true,
-            toDOM: () => ["u", 0],
+            rank: 2,
+            attrs: { color: { default: null } },
+            toDOM: (mark) => {
+                var _a;
+                const color = (0, core_1.sanitizeCSSColor)((_a = mark.attrs) === null || _a === void 0 ? void 0 : _a.color);
+                return color ? ["u", { style: `text-decoration-color: ${color}` }, 0] : ["u", 0];
+            },
             parseDOM: [
-                { tag: "u" },
+                { tag: "u", getAttrs: (el) => colorAttrs(el) },
                 {
                     // Catch <span style="text-decoration: underline"> from MS Word
                     // / Google Docs paste. We don't try to be exhaustive — common
@@ -4603,7 +4964,7 @@ exports.UnderlineExtension = {
                     getAttrs: (el) => {
                         var _a;
                         const style = (_a = el.getAttribute("style")) !== null && _a !== void 0 ? _a : "";
-                        return /text-decoration:\s*underline/i.test(style) ? null : false;
+                        return /text-decoration(?:-line)?:\s*[^;]*underline/i.test(style) ? colorAttrs(el) : false;
                     },
                 },
             ],
@@ -4621,6 +4982,16 @@ exports.UnderlineExtension = {
             });
             return true;
         },
+        /** setUnderlineColor({ color }) — underlines the selection in `color`. */
+        setUnderlineColor: (opts) => (editor) => {
+            const color = (0, core_1.sanitizeCSSColor)(opts === null || opts === void 0 ? void 0 : opts.color);
+            return color ? applyUnderline(editor, color) : false;
+        },
+        /**
+         * unsetUnderlineColor() — keeps the underline but drops its own
+         * colour, so it follows the text colour again.
+         */
+        unsetUnderlineColor: () => (editor) => editor.isActive("underline") ? applyUnderline(editor, null) : false,
     },
     keyboardShortcuts: {
         "Mod-u": (editor) => {
@@ -4649,6 +5020,8 @@ exports.StrikeExtension = {
     marks: [
         {
             name: "strike",
+            // Innermost, so the line takes the colour of the text it crosses.
+            rank: 2,
             inclusive: true,
             toDOM: () => ["s", 0],
             parseDOM: [
@@ -8613,8 +8986,10 @@ exports.default = exports.SuperscriptExtension;
  *
  * Background-color highlighter mark. Renders as `<mark>` (semantic).
  * Optional `color` attr — when set, becomes
- * `<mark style="background-color: COLOR">`. When unset, plain `<mark>`
- * inherits the browser's default yellow.
+ * `<mark style="background-color: COLOR; color: TEXT">`, where TEXT keeps
+ * the text readable on the highlight: white on dark colours, near-black
+ * on light ones, or `textColor` when given. When unset, plain `<mark>`
+ * uses the theme's default yellow.
  *
  * Security: only safe-looking CSS color tokens are accepted (hex,
  * rgb/rgba, hsl/hsla, named keywords). Anything else is rejected at
@@ -8629,25 +9004,29 @@ exports.HighlightExtension = {
         {
             name: "highlight",
             inclusive: true,
-            attrs: { color: { default: null } },
+            attrs: { color: { default: null }, textColor: { default: null } },
             toDOM: (mark) => {
-                var _a;
+                var _a, _b, _c;
                 const color = (0, core_1.sanitizeCSSColor)((_a = mark.attrs) === null || _a === void 0 ? void 0 : _a.color);
-                return color
-                    ? ["mark", { style: `background-color: ${color}` }, 0]
-                    : ["mark", 0];
+                if (!color)
+                    return ["mark", 0];
+                const text = (_c = (0, core_1.sanitizeCSSColor)((_b = mark.attrs) === null || _b === void 0 ? void 0 : _b.textColor)) !== null && _c !== void 0 ? _c : (0, core_1.contrastTextColor)(color);
+                return ["mark", { style: `background-color: ${color}; color: ${text}` }, 0];
             },
             parseDOM: [
                 {
                     tag: "mark",
                     getAttrs: (el) => {
-                        var _a;
+                        var _a, _b, _c;
                         const style = (_a = el.getAttribute("style")) !== null && _a !== void 0 ? _a : "";
                         const m = /background(?:-color)?\s*:\s*([^;]+)/i.exec(style);
                         if (!m)
                             return null;
                         const color = (0, core_1.sanitizeCSSColor)(m[1]);
-                        return color ? { color } : false;
+                        if (!color)
+                            return false;
+                        const text = /(?:^|;)\s*color\s*:\s*([^;]+)/i.exec(style);
+                        return { color, textColor: (_c = (0, core_1.sanitizeCSSColor)((_b = text === null || text === void 0 ? void 0 : text[1]) === null || _b === void 0 ? void 0 : _b.trim())) !== null && _c !== void 0 ? _c : (0, core_1.contrastTextColor)(color) };
                     },
                 },
             ],
@@ -8655,19 +9034,24 @@ exports.HighlightExtension = {
     ],
     commands: {
         /**
-         * setHighlight({ color }) — highlights the selected text. With a
-         * colour it applies (and replaces) a coloured highlight on just
-         * the selected range; without one it toggles a plain `<mark>`.
+         * setHighlight({ color, textColor? }) — highlights the selected text.
+         * With a colour it applies (and replaces) a coloured highlight on just
+         * the selected range, making the text readable on it (automatic
+         * white / near-black, or `textColor`) and removing any text colour or
+         * fill there; without one it toggles a plain `<mark>`.
          */
         setHighlight: (opts = {}) => (editor) => {
+            var _a;
             const color = opts.color ? (0, core_1.sanitizeCSSColor)(opts.color) : null;
             const selection = editor.getSelection();
             if (!selection)
                 return false;
             if (color) {
-                const next = (0, core_1.setMarkAcrossSelection)(editor.getJSON(), selection, {
+                const textColor = (_a = (0, core_1.sanitizeCSSColor)(opts.textColor)) !== null && _a !== void 0 ? _a : (0, core_1.contrastTextColor)(color);
+                const cleared = ["text_color", "background_color"].reduce((doc, mark) => { var _a; return (_a = (0, core_1.unsetMarkAcrossSelection)(doc, selection, mark)) !== null && _a !== void 0 ? _a : doc; }, editor.getJSON());
+                const next = (0, core_1.setMarkAcrossSelection)(cleared, selection, {
                     type: "highlight",
-                    attrs: { color },
+                    attrs: { color, textColor },
                 });
                 if (!next)
                     return false;
@@ -8716,6 +9100,9 @@ exports.TextColorExtension = {
     marks: [
         {
             name: "text_color",
+            // Inside fills, so an explicit text colour wins over the fill's
+            // automatic one.
+            rank: 1,
             inclusive: true,
             attrs: { color: { default: null } },
             toDOM: (mark) => {
@@ -8727,8 +9114,16 @@ exports.TextColorExtension = {
                 {
                     tag: "*",
                     getAttrs: (el) => {
-                        var _a;
-                        const style = (_a = el.getAttribute("style")) !== null && _a !== void 0 ? _a : "";
+                        var _a, _b;
+                        // A fill span's colour is the fill's readable text colour,
+                        // not a separate text colour (see extension-background-color).
+                        // Same for a coloured <mark>: its colour belongs to the highlight.
+                        if (el.tagName.toLowerCase() === "mark")
+                            return false;
+                        const classes = ((_a = el.getAttribute("class")) !== null && _a !== void 0 ? _a : "").split(/\s+/);
+                        if (classes.includes("smeditor-fill") || classes.includes("smeditor-text-outline"))
+                            return false;
+                        const style = (_b = el.getAttribute("style")) !== null && _b !== void 0 ? _b : "";
                         // Match `color:` only at the start of a declaration so a
                         // `background-color:` declaration is never mistaken for it.
                         const m = /(?:^|;)\s*color\s*:\s*([^;]+)/i.exec(style);
@@ -8882,27 +9277,50 @@ exports.default = exports.TextStrokeExtension;
 /**
  * @smeditor/extension-background-color
  *
- * Inline background color — `<span style="background-color: …">`.
- * Distinct from `highlight` (`<mark>`): highlight is semantic, this
- * is purely cosmetic so it doesn't render with `<mark>`'s default
- * yellow.
+ * Fills the area behind the selected text and keeps the text readable on
+ * it: the text becomes white on dark fills and near-black on light ones
+ * (or a colour chosen explicitly). Renders as
+ *   `<span class="smeditor-fill" style="background-color: …; color: …">`.
+ *
+ * The class tells the text-colour mark that this span's `color` belongs
+ * to the fill, so it isn't parsed as a separate text colour. Plain
+ * `background-color` spans (older content, pastes) are still read; their
+ * text gets the automatic contrast colour.
+ *
+ * Distinct from `highlight` (`<mark>`): highlight is a semantic marker
+ * and doesn't touch the text colour.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BackgroundColorExtension = void 0;
+exports.BackgroundColorExtension = exports.FILL_CLASS = void 0;
+exports.isFillElement = isFillElement;
 const core_1 = require("@smeditor/core");
+exports.FILL_CLASS = "smeditor-fill";
+/** Class used for filled text by 0.3.2 of the Rails adapter; read as a fill. */
+const LEGACY_FILL_CLASSES = [exports.FILL_CLASS, "smeditor-text-outline"];
+/** True when an element is a fill span rendered by this extension. */
+function isFillElement(el) {
+    var _a;
+    const classes = ((_a = el.getAttribute("class")) !== null && _a !== void 0 ? _a : "").split(/\s+/);
+    return LEGACY_FILL_CLASSES.some((name) => classes.includes(name));
+}
+function declaration(style, name) {
+    const m = new RegExp(`(?:^|;)\\s*${name}\\s*:\\s*([^;]+)`, "i").exec(style);
+    return m ? m[1].trim() : null;
+}
 exports.BackgroundColorExtension = {
     name: "background_color",
     marks: [
         {
             name: "background_color",
             inclusive: true,
-            attrs: { color: { default: null } },
+            attrs: { color: { default: null }, textColor: { default: null } },
             toDOM: (mark) => {
-                var _a;
+                var _a, _b, _c;
                 const color = (0, core_1.sanitizeCSSColor)((_a = mark.attrs) === null || _a === void 0 ? void 0 : _a.color);
-                return color
-                    ? ["span", { style: `background-color: ${color}` }, 0]
-                    : ["span", 0];
+                if (!color)
+                    return ["span", 0];
+                const text = (_c = (0, core_1.sanitizeCSSColor)((_b = mark.attrs) === null || _b === void 0 ? void 0 : _b.textColor)) !== null && _c !== void 0 ? _c : (0, core_1.contrastTextColor)(color);
+                return ["span", { class: exports.FILL_CLASS, style: `background-color: ${color}; color: ${text}` }, 0];
             },
             parseDOM: [
                 {
@@ -8912,26 +9330,34 @@ exports.BackgroundColorExtension = {
                         if (el.tagName.toLowerCase() === "mark")
                             return false;
                         const style = (_a = el.getAttribute("style")) !== null && _a !== void 0 ? _a : "";
-                        const m = /background(?:-color)?\s*:\s*([^;]+)/i.exec(style);
-                        if (!m)
+                        const color = (0, core_1.sanitizeCSSColor)(declaration(style, "background(?:-color)?"));
+                        if (!color)
                             return false;
-                        const color = (0, core_1.sanitizeCSSColor)(m[1]);
-                        return color ? { color } : false;
+                        const text = isFillElement(el) ? (0, core_1.sanitizeCSSColor)(declaration(style, "color")) : null;
+                        return { color, textColor: text !== null && text !== void 0 ? text : (0, core_1.contrastTextColor)(color) };
                     },
                 },
             ],
         },
     ],
     commands: {
-        /** setBackgroundColor({ color }) — applies to the selected range. */
+        /**
+         * setBackgroundColor({ color, textColor? }) — fills the selected text.
+         * The text becomes `textColor`, or white / near-black automatically
+         * for contrast; any text colour or highlight on the range is removed
+         * so nothing paints over the fill.
+         */
         setBackgroundColor: (opts) => (editor) => {
+            var _a;
             const color = (0, core_1.sanitizeCSSColor)(opts === null || opts === void 0 ? void 0 : opts.color);
             if (!color)
                 return false;
+            const textColor = (_a = (0, core_1.sanitizeCSSColor)(opts === null || opts === void 0 ? void 0 : opts.textColor)) !== null && _a !== void 0 ? _a : (0, core_1.contrastTextColor)(color);
             const selection = editor.getSelection();
-            const next = (0, core_1.setMarkAcrossSelection)(editor.getJSON(), selection, {
+            const cleared = ["text_color", "highlight"].reduce((doc, mark) => { var _a; return (_a = (0, core_1.unsetMarkAcrossSelection)(doc, selection, mark)) !== null && _a !== void 0 ? _a : doc; }, editor.getJSON());
+            const next = (0, core_1.setMarkAcrossSelection)(cleared, selection, {
                 type: "background_color",
-                attrs: { color },
+                attrs: { color, textColor },
             });
             if (!next)
                 return false;

@@ -1,5 +1,33 @@
 # Changelog — smeditor
 
+## 0.3.4 — 2026-09-20
+
+- **Highlight** now keeps the text readable like **Fill**: the text on a coloured highlight becomes white on dark colours and dark on light ones (or White / Dark from the new "Text on highlight" chips). It replaces the text colour and fill on its range; a text colour picked afterwards still shows on top. Previously a dark highlight hid the text.
+- Older highlights saved without a text colour get the readable colour when loaded.
+
+## 0.3.3 — 2026-09-20
+
+- Colour tools are now: **Text color**, **Fill**, **Highlight** and **Underline color**.
+- **Fill** (the former "Background color") paints the area behind the text and switches the text to a readable colour — white on dark fills, dark on light ones — or White / Dark chosen in the panel. It replaces the text colour and highlight on its range; a text colour picked afterwards shows on top.
+- New **Underline color**: underlines the selection in the chosen colour; "Remove underline color" keeps the underline in the text colour. Underlines and strike-throughs now take the colour of the text they decorate.
+- The "Text outline" button from 0.3.2 is removed from the toolbar and the text-stroke extension is back to its original behaviour; text saved with the 0.3.2 outline is shown as a fill.
+- The public-page sanitizer keeps `text-decoration-color`.
+
+## 0.3.2 — 2026-09-20
+
+- "Text outline" now fills the area behind the selected text (rounded, padded) and switches the text to a readable colour: white on dark fills, dark on light ones, or an explicit White/Dark choice in the panel. It replaces the text colour, background and highlight on that range so the text is always visible.
+- Content saved with the old thin `-webkit-text-stroke` outline is upgraded to the filled outline when loaded.
+- The outline button shows a filled "A" icon with the current fill colour under it.
+
+## 0.3.1 — 2026-09-20
+
+- Formatting with a bare caret now applies to the word under the caret instead of recolouring the whole paragraph; toolbar active states follow the same rule.
+- Text outline has its own icon and name ("Text outline") instead of reusing the text-colour "A", so it is no longer applied by mistake; its panel offers 1/2/3px widths and a labelled "Remove text outline" button.
+- Colour pickers show the colour applied to the selection as a bar under the icon, mark it in the palette, and have a labelled remove button.
+- Font, Size and Spacing show the current value on the trigger; alignment and list triggers show the current alignment/list icon and mark the active item (alignment state was never shown before).
+- The selected-text bubble toolbar adds inline code, text colour, highlight and clear formatting, opens below the selection instead of covering the main toolbar, and hides when the editor loses focus.
+- Neighbouring text with the same highlight/colour/outline is rendered as one element in a stable order, removing visible seams between pieces of one highlight.
+
 ## 0.3.0 — 2026-09-13
 
 - Added explicit `light` and `dark` theme selection across Core, React, and the Rails adapter. Rails now also supports a global `config.default_theme` and per-editor `theme` option.

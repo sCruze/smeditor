@@ -12,6 +12,7 @@ export { compileSchema, flattenExtensions } from "./schema.js";
 export { serializeToHTML, parseHTML, escapeHTML } from "./serializer.js";
 export {
   sanitizeCSSColor,
+  contrastTextColor,
   sanitizeCSSFontFamily,
   sanitizeCSSFontSize,
   sanitizeCSSLineHeight,
@@ -28,6 +29,7 @@ export {
   emptyDocument,
   hasMark,
   selectionHasMark,
+  selectionMarkAttrs,
   toggleMarkInDoc,
   setMarkAcrossSelection,
   unsetMarkAcrossSelection,

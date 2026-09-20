@@ -19,6 +19,7 @@ import {
   removeMarkFromInlineRange,
   splitInlineAt,
   visibleLength,
+  blockVisibleText,
 } from "./transform.js";
 
 /** Deep clone any JSON-safe value. Faster than JSON.parse(JSON.stringify) for our shapes. */
@@ -162,6 +163,27 @@ export function selectionHasMark(
   return texts.every((t) => hasMark(t, type, attrs));
 }
 
+/**
+ * Attributes of a mark shared by the whole selection (the word under a
+ * bare caret). Returns the attrs of the first matching mark when every
+ * selected text node carries a mark of `type`, otherwise null. Toolbars
+ * use it to show the current colour / font / size of the selection.
+ */
+export function selectionMarkAttrs(
+  doc: DocumentJSON,
+  selection: EditorSelection | null,
+  type: string,
+): Record<string, unknown> | null {
+  if (!selection) return null;
+  const texts = leafRangesInSelection(doc, selection).flatMap(({ node, from, to }) =>
+    textNodesInInlineRange(node.content ?? [], from, to),
+  );
+  const marks = texts.map((t) => t.marks?.find((m) => m.type === type) ?? null);
+  const first = marks[0];
+  if (!first || marks.some((m) => m === null)) return null;
+  return { ...(first.attrs ?? {}) };
+}
+
 /** Collect every text node intersecting the selection. */
 export function textsInSelection(
   doc: DocumentJSON,
@@ -289,9 +311,8 @@ export function toggleMarkInDoc(
  * Behaviour:
  *  - a real range  → the mark is set on just that span, replacing any
  *    existing mark of the same type so colours/sizes swap cleanly;
- *  - a collapsed caret → the mark is applied to the whole block the
- *    caret sits in, so a toolbar click with no selection still does
- *    something predictable.
+ *  - a collapsed caret → the mark is applied to the word under the
+ *    caret (the whole block only when no word is there).
  *
  * Returns a new document, or null when nothing changed.
  */
@@ -391,8 +412,12 @@ function leafRangesInSelection(
       let to: number;
 
       if (collapsed) {
-        from = 0;
-        to = len;
+        // A bare caret targets the word it sits in (or touches), like
+        // Google Docs / Word. Only when there is no word under the caret
+        // (empty block, caret between spaces) does the whole block apply.
+        const word = wordRangeAt(node, Math.min(start.offset, len));
+        from = word ? word[0] : 0;
+        to = word ? word[1] : len;
       } else {
         const isStart = samePath(path, start.path);
         const isEnd = samePath(path, end.path);
@@ -403,6 +428,21 @@ function leafRangesInSelection(
       return { path, node, from, to };
     })
     .filter(({ from, to }) => to > from);
+}
+
+const WORD_CHAR = /[\p{L}\p{N}_'\u2019-]/u;
+
+/**
+ * The [from, to) visible-offset range of the word at `offset` in a leaf
+ * block, or null when the caret touches no word characters.
+ */
+function wordRangeAt(block: DocumentNode, offset: number): [number, number] | null {
+  const text = blockVisibleText(block);
+  let from = Math.max(0, Math.min(offset, text.length));
+  let to = from;
+  while (from > 0 && WORD_CHAR.test(text[from - 1])) from--;
+  while (to < text.length && WORD_CHAR.test(text[to])) to++;
+  return to > from ? [from, to] : null;
 }
 
 function inlineContentLength(content: DocumentNode[]): number {

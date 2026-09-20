@@ -38,6 +38,7 @@ import {
   emptyDocument,
   getBlockText,
   selectionHasMark,
+  selectionMarkAttrs,
 } from "./doc-utils.js";
 import { nodeAt, normalizeDeepPoint } from "./path.js";
 import {
@@ -364,6 +365,11 @@ class Editor implements EditorInstance {
     }
 
     return map;
+  }
+
+  getMarkAttributes(name: string): Record<string, unknown> | null {
+    if (!this.schema.marks[name]) return null;
+    return selectionMarkAttrs(this.doc, this.selection, name);
   }
 
   isActive(name: string, attrs?: Record<string, unknown>): boolean {
@@ -973,6 +979,7 @@ function sanitizePastedStyleValue(name: string, value: string): string | null {
   if (name === "background-color" || name === "background") {
     return sanitizeCSSColor(value);
   }
+  if (name === "text-decoration-color") return sanitizeCSSColor(value);
   if (name === "font-family") return sanitizeCSSFontFamily(value);
   if (name === "font-size") return sanitizeCSSFontSize(value);
   if (name === "line-height") return sanitizeCSSLineHeight(value);

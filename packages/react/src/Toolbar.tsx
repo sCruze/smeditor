@@ -15,7 +15,7 @@
 import { useState } from "react";
 import type { ReactNode, ButtonHTMLAttributes } from "react";
 import type { EditorInstance, DocumentNode } from "@smeditor/core";
-import { selectionInsideWrapper } from "@smeditor/core";
+import { contrastTextColor, selectionInsideWrapper } from "@smeditor/core";
 
 /**
  * The leaf block the caret actually sits in. With the deep selection
@@ -38,7 +38,7 @@ function leafBlockUnderSelection(
   return node.type === "doc" ? null : node;
 }
 import { useEditorContext } from "./Editor.js";
-import { Dropdown, DropdownItem, DropdownSeparator } from "./Dropdown.js";
+import { Dropdown, DropdownItem, DropdownSeparator, useDropdownClose } from "./Dropdown.js";
 import {
   IconUndo,
   IconRedo,
@@ -54,6 +54,8 @@ import {
   IconHighlight,
   IconTextColor,
   IconBackgroundColor,
+  IconTextStroke,
+  IconUnderlineColor,
   IconBlockquote,
   IconCodeBlock,
   IconHorizontalRule,
@@ -818,54 +820,158 @@ interface ColorPickerProps {
   label: ReactNode;
   active?: boolean;
   disabled?: boolean;
+  /** Colour applied to the current selection — shown on the trigger and in the palette. */
+  current?: string | null;
   onPick: (color: string) => void;
   onClear: () => void;
+  /** Extra controls rendered between the palette and the remove button. */
+  extra?: ReactNode;
 }
 
-function ColorPicker({
+function sameColor(a: string | null | undefined, b: string): boolean {
+  return typeof a === "string" && a.trim().toLowerCase() === b.toLowerCase();
+}
+
+function markColor(editor: EditorInstance, mark: string): string | null {
+  const color = editor.getMarkAttributes(mark)?.color;
+  return typeof color === "string" && color ? color : null;
+}
+
+function ColorPanel({
   ariaLabel,
-  label,
   active,
   disabled,
+  current,
   onPick,
   onClear,
-}: ColorPickerProps) {
+  extra,
+}: Omit<ColorPickerProps, "label">) {
+  const close = useDropdownClose();
+  return (
+    <div className="smeditor-color-panel" role="group" aria-label={ariaLabel}>
+      <div className="smeditor-color-panel__title">{ariaLabel}</div>
+      <div className="smeditor-color-grid">
+        {PALETTE.map((color) => {
+          const selected = sameColor(current, color);
+          return (
+            <button
+              key={color}
+              type="button"
+              className={["smeditor-color-grid__swatch", selected ? "is-active" : ""].filter(Boolean).join(" ")}
+              style={{ background: color }}
+              aria-label={`${ariaLabel}: ${color}`}
+              aria-pressed={selected}
+              title={color}
+              disabled={disabled}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onPick(color);
+                close();
+              }}
+            />
+          );
+        })}
+      </div>
+      {extra}
+      <button
+        type="button"
+        className="smeditor-color-panel__clear"
+        disabled={disabled || !active}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          onClear();
+          close();
+        }}
+      >
+        Remove {ariaLabel.toLowerCase()}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Colour dropdown. The trigger shows a bar in the colour applied to the
+ * selection, the palette marks it, and a labelled button removes it.
+ */
+function ColorPicker({ label, ...panel }: ColorPickerProps) {
+  const { ariaLabel, active, disabled, current } = panel;
   return (
     <Dropdown
       ariaLabel={ariaLabel}
-      label={label}
+      label={
+        <span className="smeditor-color-trigger" title={current ? `${ariaLabel}: ${current}` : ariaLabel}>
+          {label}
+          <span
+            className="smeditor-color-trigger__bar"
+            data-empty={current ? "false" : "true"}
+            style={current ? { backgroundColor: current } : undefined}
+          />
+        </span>
+      }
       active={active}
       disabled={disabled}
+      className="smeditor-dropdown--color"
     >
-      <div
-        className="smeditor-color-grid"
-        role="group"
-        aria-label={`${ariaLabel} palette`}
-      >
-        <button
-          type="button"
-          className="smeditor-color-grid__swatch smeditor-color-grid__swatch--clear"
-          aria-label={`Clear ${ariaLabel.toLowerCase()}`}
-          title={`Clear ${ariaLabel.toLowerCase()}`}
-          disabled={disabled}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={onClear}
-        />
-        {PALETTE.map((color) => (
-          <button
-            key={color}
-            type="button"
-            className="smeditor-color-grid__swatch"
-            style={{ background: color }}
-            aria-label={`Set ${ariaLabel.toLowerCase()} to ${color}`}
-            title={color}
-            disabled={disabled}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => onPick(color)}
-          />
-        ))}
-      </div>
+      <ColorPanel {...panel} />
     </Dropdown>
+  );
+}
+
+/** Text colour options on a fill; null = automatic contrast. */
+const FILL_TEXT: { label: string; value: string | null }[] = [
+  { label: "Auto", value: null },
+  { label: "White", value: "#ffffff" },
+  { label: "Dark", value: "#1a1a1f" },
+];
+
+/**
+ * The text colour chosen for a fill: null when it is the automatic
+ * contrast colour for the fill, otherwise the explicit colour.
+ */
+function fillTextChoice(attrs: Record<string, unknown> | null): string | null {
+  const fill = typeof attrs?.color === "string" ? attrs.color : null;
+  const text = typeof attrs?.textColor === "string" ? attrs.textColor : null;
+  return fill && text && !sameColor(text, contrastTextColor(fill)) ? text : null;
+}
+
+function FillTextChips({
+  current,
+  caption,
+  apply,
+}: {
+  current: Record<string, unknown> | null;
+  caption: string;
+  apply: (color: string, textColor: string | null) => void;
+}) {
+  const close = useDropdownClose();
+  const choice = fillTextChoice(current);
+  return (
+    <>
+      <div className="smeditor-color-panel__title">{caption}</div>
+      <div className="smeditor-color-panel__widths">
+        {FILL_TEXT.map((option) => {
+          const selected = Boolean(current) && choice === option.value;
+          return (
+            <button
+              key={option.label}
+              type="button"
+              className={["smeditor-color-panel__chip", selected ? "is-active" : ""].filter(Boolean).join(" ")}
+              style={option.value ? ({ "--sme-chip-swatch": option.value } as Record<string, string>) : undefined}
+              aria-pressed={selected}
+              aria-label={`${caption}: ${option.label}`}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                const color = typeof current?.color === "string" ? current.color : PALETTE[7];
+                apply(color, option.value);
+                close();
+              }}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -879,6 +985,7 @@ export function TextColorButton() {
       ariaLabel="Text color"
       label={<IconTextColor />}
       active={editor.isActive("text_color")}
+      current={markColor(editor, "text_color")}
       disabled={!editor.isEditable()}
       onPick={(color) => editor.commands.setTextColor?.({ color })}
       onClear={() => editor.commands.unsetTextColor?.()}
@@ -893,9 +1000,10 @@ export function TextStrokeButton() {
   }
   return (
     <ColorPicker
-      ariaLabel="Text outline"
-      label={<span className="smeditor-dropdown__text">Stroke</span>}
+      ariaLabel="Text stroke"
+      label={<IconTextStroke />}
       active={editor.isActive("text_stroke")}
+      current={markColor(editor, "text_stroke")}
       disabled={!editor.isEditable()}
       onPick={(color) => editor.commands.setTextStroke?.({ color, width: 1 })}
       onClear={() => editor.commands.unsetTextStroke?.()}
@@ -903,6 +1011,10 @@ export function TextStrokeButton() {
   );
 }
 
+/**
+ * Fill — paints the area behind the selected text; the text switches to
+ * a readable colour on it (automatic, or White / Dark from the panel).
+ */
 export function BackgroundColorButton() {
   const editor = useEditorContext();
   if (
@@ -911,14 +1023,43 @@ export function BackgroundColorButton() {
   ) {
     return null;
   }
+  const attrs = editor.getMarkAttributes("background_color");
   return (
     <ColorPicker
-      ariaLabel="Background color"
+      ariaLabel="Fill"
       label={<IconBackgroundColor />}
       active={editor.isActive("background_color")}
+      current={markColor(editor, "background_color")}
       disabled={!editor.isEditable()}
-      onPick={(color) => editor.commands.setBackgroundColor?.({ color })}
+      onPick={(color) => editor.commands.setBackgroundColor?.({ color, textColor: fillTextChoice(attrs) })}
       onClear={() => editor.commands.unsetBackgroundColor?.()}
+      extra={
+        <FillTextChips
+          current={attrs}
+          caption="Text on fill"
+          apply={(color, textColor) => editor.commands.setBackgroundColor?.({ color, textColor })}
+        />
+      }
+    />
+  );
+}
+
+/** Underline colour — underlines the selection in the picked colour. */
+export function UnderlineColorButton() {
+  const editor = useEditorContext();
+  if (!editor || !hasCommands(editor, ["setUnderlineColor", "unsetUnderlineColor"])) {
+    return null;
+  }
+  const color = markColor(editor, "underline");
+  return (
+    <ColorPicker
+      ariaLabel="Underline color"
+      label={<IconUnderlineColor />}
+      active={Boolean(color)}
+      current={color}
+      disabled={!editor.isEditable()}
+      onPick={(value) => editor.commands.setUnderlineColor?.({ color: value })}
+      onClear={() => editor.commands.unsetUnderlineColor?.()}
     />
   );
 }
@@ -928,14 +1069,23 @@ export function HighlightButton() {
   if (!editor || !hasCommands(editor, ["setHighlight", "unsetHighlight"])) {
     return null;
   }
+  const attrs = editor.getMarkAttributes("highlight");
   return (
     <ColorPicker
       ariaLabel="Highlight"
       label={<IconHighlight />}
       active={editor.isActive("highlight")}
+      current={markColor(editor, "highlight")}
       disabled={!editor.isEditable()}
-      onPick={(color) => editor.commands.setHighlight?.({ color })}
+      onPick={(color) => editor.commands.setHighlight?.({ color, textColor: fillTextChoice(attrs) })}
       onClear={() => editor.commands.unsetHighlight?.()}
+      extra={
+        <FillTextChips
+          current={attrs}
+          caption="Text on highlight"
+          apply={(color, textColor) => editor.commands.setHighlight?.({ color, textColor })}
+        />
+      }
     />
   );
 }
@@ -1529,6 +1679,7 @@ export function TableToolbar() {
           ariaLabel="Cell background"
           label={<IconBackgroundColor />}
           active={Boolean(cellBackground)}
+          current={cellBackground}
           disabled={!editor.isEditable()}
           onPick={(color) => editor.commands.setCellBackground?.({ color })}
           onClear={() => editor.commands.setCellBackground?.({ color: null })}
@@ -1548,6 +1699,16 @@ export function TableToolbar() {
 // ============================================================================
 // Font family / size dropdowns (§5)
 // ============================================================================
+
+function markValue(editor: EditorInstance, mark: string, attr: string): string | null {
+  const value = editor.getMarkAttributes(mark)?.[attr];
+  return typeof value === "string" && value ? value : null;
+}
+
+function sameValue(a: string | null, b: string | null): boolean {
+  const norm = (v: string | null) => (v ?? "").replace(/["'\s]/g, "").toLowerCase();
+  return a !== null && b !== null && norm(a) === norm(b);
+}
 
 const FONT_FAMILIES: { label: string; value: string | null }[] = [
   { label: "Default", value: null },
@@ -1570,7 +1731,11 @@ export function FontFamilyDropdown() {
   return (
     <Dropdown
       ariaLabel="Font family"
-      label={<span className="smeditor-dropdown__text">Font</span>}
+      label={
+        <span className="smeditor-dropdown__text">
+          {FONT_FAMILIES.find((f) => f.value && sameValue(f.value, markValue(editor, "font_family", "family")))?.label ?? "Font"}
+        </span>
+      }
       active={editor.isActive("font_family")}
       disabled={!editor.isEditable()}
     >
@@ -1579,7 +1744,7 @@ export function FontFamilyDropdown() {
           key={f.label}
           active={
             f.value
-              ? editor.isActive("font_family", { family: f.value })
+              ? sameValue(f.value, markValue(editor, "font_family", "family"))
               : !editor.isActive("font_family")
           }
           onSelect={() =>
@@ -1614,7 +1779,7 @@ export function FontSizeDropdown() {
   return (
     <Dropdown
       ariaLabel="Font size"
-      label={<span className="smeditor-dropdown__text">Size</span>}
+      label={<span className="smeditor-dropdown__text">{markValue(editor, "font_size", "size") ?? "Size"}</span>}
       active={editor.isActive("font_size")}
       disabled={!editor.isEditable()}
     >
@@ -1663,7 +1828,7 @@ export function LineHeightDropdown() {
   return (
     <Dropdown
       ariaLabel="Line height"
-      label={<span className="smeditor-dropdown__text">Spacing</span>}
+      label={<span className="smeditor-dropdown__text">{current ?? "Spacing"}</span>}
       active={current !== null}
       disabled={!editor.isEditable()}
     >

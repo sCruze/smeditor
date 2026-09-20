@@ -241,6 +241,14 @@ export function Dropdown({
   );
 }
 
+/**
+ * Close the surrounding dropdown from custom menu content (colour
+ * swatches, pickers) that isn't a `DropdownItem`.
+ */
+export function useDropdownClose(): () => void {
+  return useContext(DropdownCloseContext);
+}
+
 // ---------------------------------------------------------------------------
 // <DropdownItem />
 // ---------------------------------------------------------------------------

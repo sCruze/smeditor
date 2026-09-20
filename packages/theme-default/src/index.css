@@ -205,7 +205,7 @@
 /* Color swatch grid inside the color-picker dropdowns */
 .smeditor-color-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(10, 22px);
   gap: 4px;
   padding: 6px;
 }
@@ -1095,4 +1095,143 @@
   .smeditor-editor {
     padding: var(--sme-space-3);
   }
+}
+
+/* ===========================================================================
+ * Colour pickers — current-colour indicator and labelled panel
+ * ======================================================================== */
+
+.smeditor-color-trigger {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.smeditor-color-trigger__bar {
+  display: block;
+  width: 14px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.smeditor-color-trigger__bar[data-empty="true"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--sme-color-border-strong);
+}
+
+.smeditor-color-trigger__bar[data-empty="false"] {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.smeditor-dropdown--color .smeditor-dropdown__menu {
+  min-width: 0;
+  max-width: none;
+}
+
+.smeditor-color-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+}
+
+.smeditor-color-panel .smeditor-color-grid {
+  padding: 0;
+}
+
+.smeditor-color-panel__title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sme-color-text-muted);
+}
+
+.smeditor-color-panel__widths {
+  display: flex;
+  gap: 4px;
+}
+
+.smeditor-color-panel__chip,
+.smeditor-color-panel__clear {
+  appearance: none;
+  font: inherit;
+  font-size: var(--sme-text-sm);
+  color: var(--sme-color-text);
+  background: transparent;
+  border: 1px solid var(--sme-color-border);
+  border-radius: var(--sme-radius-sm);
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.smeditor-color-panel__chip {
+  flex: 1 1 0;
+  white-space: nowrap;
+}
+
+.smeditor-color-panel__chip:hover,
+.smeditor-color-panel__clear:hover {
+  background: var(--sme-color-surface-muted);
+}
+
+.smeditor-color-panel__chip.is-active {
+  color: var(--sme-color-accent);
+  background: var(--sme-color-accent-soft);
+  border-color: var(--sme-color-accent);
+}
+
+.smeditor-color-panel__clear:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.smeditor-color-panel__clear:disabled:hover {
+  background: transparent;
+}
+
+/* Value pickers show the current value (font / size / spacing) */
+.smeditor-dropdown__label--text {
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Bubble menu — one row, compact dividers */
+.smeditor-bubble-menu {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.smeditor-bubble-menu .smeditor-toolbar__divider {
+  height: 18px;
+  margin: 0 2px;
+}
+
+/* Filled text (extension-background-color). `.smeditor-text-outline` is
+ * the class the 0.3.2 Rails build wrote for the same thing. */
+.smeditor-editor :where(.smeditor-fill, .smeditor-text-outline),
+.smeditor-content :where(.smeditor-fill, .smeditor-text-outline) {
+  padding: 0.04em 0.18em;
+  border-radius: 0.22em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Colour dot on the "text in outline" chips */
+.smeditor-color-panel__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.smeditor-color-panel__chip::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sme-chip-swatch, conic-gradient(#1a1a1f 0 50%, #ffffff 0));
+  box-shadow: inset 0 0 0 1px var(--sme-color-border-strong);
 }

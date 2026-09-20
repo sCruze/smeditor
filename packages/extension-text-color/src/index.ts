@@ -20,6 +20,9 @@ export const TextColorExtension: Extension = {
   marks: [
     {
       name: "text_color",
+      // Inside fills, so an explicit text colour wins over the fill's
+      // automatic one.
+      rank: 1,
       inclusive: true,
       attrs: { color: { default: null } },
       toDOM: (mark) => {
@@ -30,6 +33,12 @@ export const TextColorExtension: Extension = {
         {
           tag: "*",
           getAttrs: (el) => {
+            // A fill span's colour is the fill's readable text colour,
+            // not a separate text colour (see extension-background-color).
+            // Same for a coloured <mark>: its colour belongs to the highlight.
+            if (el.tagName.toLowerCase() === "mark") return false;
+            const classes = (el.getAttribute("class") ?? "").split(/\s+/);
+            if (classes.includes("smeditor-fill") || classes.includes("smeditor-text-outline")) return false;
             const style = el.getAttribute("style") ?? "";
             // Match `color:` only at the start of a declaration so a
             // `background-color:` declaration is never mistaken for it.

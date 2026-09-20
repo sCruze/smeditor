@@ -58,6 +58,7 @@ export {
   // Color pickers
   TextColorButton,
   TextStrokeButton,
+  UnderlineColorButton,
   BackgroundColorButton,
   HighlightButton,
   // More
@@ -85,7 +86,7 @@ export type {
   ImageButtonProps,
 } from "./Toolbar.js";
 
-export { Dropdown, DropdownItem, DropdownSeparator } from "./Dropdown.js";
+export { Dropdown, DropdownItem, DropdownSeparator, useDropdownClose } from "./Dropdown.js";
 export type { DropdownProps, DropdownItemProps } from "./Dropdown.js";
 
 // Floating UI primitive + the menus built on it

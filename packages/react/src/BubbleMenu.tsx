@@ -8,8 +8,11 @@
  * collapses or moves outside, it hides.
  *
  * Default contents are the inline-formatting buttons (bold, italic,
- * underline, strike, link). Pass children to customise — the buttons
- * read the editor from context just like in the main toolbar.
+ * underline, strike, inline code, link), text colour, fill, underline
+ * colour and clear formatting — each hidden when its extension isn't
+ * installed.
+ * Pass children to customise — the buttons read the editor from context
+ * just like in the main toolbar.
  */
 
 import { useEffect, useState } from "react";
@@ -21,11 +24,17 @@ import {
   ItalicButton,
   UnderlineButton,
   StrikeButton,
+  InlineCodeButton,
   LinkButton,
+  TextColorButton,
+  BackgroundColorButton,
+  UnderlineColorButton,
+  ClearFormattingButton,
+  ToolbarDivider,
 } from "./Toolbar.js";
 
 export interface BubbleMenuProps {
-  /** Custom contents. Defaults to bold / italic / underline / strike / link. */
+  /** Custom contents. Defaults to inline marks, link, colours and clear formatting. */
   children?: ReactNode;
 }
 
@@ -75,6 +84,9 @@ export function BubbleMenu({ children }: BubbleMenuProps) {
   }, [editor]);
 
   if (!editor) return null;
+  const has = (name: string) => typeof editor.commands[name] === "function";
+  const hasColors = has("setTextColor") || has("setBackgroundColor") || has("setUnderlineColor");
+  const hasClear = has("clearFormatting");
 
   return (
     <Floating
@@ -89,7 +101,14 @@ export function BubbleMenu({ children }: BubbleMenuProps) {
           <ItalicButton />
           <UnderlineButton />
           <StrikeButton />
+          <InlineCodeButton />
           <LinkButton />
+          {hasColors && <ToolbarDivider />}
+          <TextColorButton />
+          <BackgroundColorButton />
+          <UnderlineColorButton />
+          {hasClear && <ToolbarDivider />}
+          <ClearFormattingButton />
         </>
       )}
     </Floating>

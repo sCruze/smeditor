@@ -34,17 +34,20 @@ describe("FullKit MVP regressions", () => {
 
   it("applies text color, background, highlight, and text stroke to selected text", () => {
     const editor = createEditor({
-      content: "<p>Styled text</p>",
+      content: "<p>Styled text here</p>",
       extensions: [FullKit],
     });
+    // Fill and highlight each own the text colour of their range, so every
+    // colour tool goes on its own word.
     editor.setSelection(selection(0, 6));
-
     expect(editor.commands.setTextColor?.({ color: "#ef4444" })).toBe(true);
-    expect(editor.commands.setBackgroundColor?.({ color: "#ddd6fe" })).toBe(true);
-    expect(editor.commands.setHighlight?.({ color: "#fef08a" })).toBe(true);
     expect(
       editor.commands.setTextStroke?.({ color: "#111827", width: "1px" }),
     ).toBe(true);
+    editor.setSelection(selection(7, 11));
+    expect(editor.commands.setHighlight?.({ color: "#fef08a" })).toBe(true);
+    editor.setSelection(selection(12, 16));
+    expect(editor.commands.setBackgroundColor?.({ color: "#ddd6fe" })).toBe(true);
 
     const marks = marksIn(editor.getJSON());
     expect(marks.some((mark) => mark.type === "text_color")).toBe(true);

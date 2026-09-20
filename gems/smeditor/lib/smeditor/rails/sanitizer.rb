@@ -13,7 +13,7 @@ module SMEditor
       module_function
 
       # Attributes kept on surviving tags. `style` is included because
-      # SMEditor serializes color, background, highlight, text stroke,
+      # SMEditor serializes color, background, highlight, underline colour, text stroke,
       # font size, font family and alignment as constrained inline CSS.
       ALLOWED_ATTRS = %w[
         href src alt title class style target rel
@@ -111,7 +111,7 @@ module SMEditor
         case name
         when "text-align"
           sanitize_text_align(value)
-        when "color", "background-color", "background"
+        when "color", "background-color", "background", "text-decoration-color"
           sanitize_color(value)
         when "font-family"
           sanitize_font_family(value)

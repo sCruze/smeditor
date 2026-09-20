@@ -14,6 +14,8 @@ export const StrikeExtension: Extension = {
   marks: [
     {
       name: "strike",
+      // Innermost, so the line takes the colour of the text it crosses.
+      rank: 2,
       inclusive: true,
       toDOM: () => ["s", 0],
       parseDOM: [

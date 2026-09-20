@@ -42,6 +42,19 @@ RSpec.describe SMEditor::Rails::Sanitizer do
       expect(out).to include("background-color")
     end
 
+    it "keeps the fill class and its colours" do
+      html = '<span class="smeditor-fill" style="background-color: #ef4444; color: #ffffff">fill</span>'
+      out = described_class.sanitize(html)
+      expect(out).to include('class="smeditor-fill"')
+      expect(out).to include("background-color")
+      expect(out).to include("#ffffff")
+    end
+
+    it "accepts a safe underline colour and rejects an unsafe one" do
+      expect(described_class.sanitize_style_value("text-decoration-color", "#3b82f6")).to eq("#3b82f6")
+      expect(described_class.sanitize_style_value("text-decoration-color", "url(javascript:alert(1))")).to be_nil
+    end
+
     it "drops a tag outside an explicit allow-list" do
       out = described_class.sanitize(
         "<p><em>kept?</em></p>", allowed_tags: %w[p]

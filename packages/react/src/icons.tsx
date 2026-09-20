@@ -136,6 +136,19 @@ export const IconTextColor = (p: IconProps) => (
   </Svg>
 );
 
+export const IconTextStroke = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M2.8 13.5 6.9 2.5h2.2l4.1 11h-2.3l-.9-2.6H6l-.9 2.6z" strokeWidth={1.1} />
+    <path d="M6.7 8.9h2.6L8 5.2z" strokeWidth={1.1} />
+  </Svg>
+);
+
+export const IconUnderlineColor = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4.5 2.5v4.5a3.5 3.5 0 0 0 7 0V2.5" />
+  </Svg>
+);
+
 export const IconBackgroundColor = (p: IconProps) => (
   <Svg {...p}>
     <rect x="2" y="2" width="12" height="12" rx="1.5" />

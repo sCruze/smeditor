@@ -33,34 +33,71 @@ export function serializeToHTML(
   schema: CompiledSchema,
 ): string {
   if (!doc || doc.type !== "doc" || !doc.content) return "";
-  return doc.content.map((node) => renderNode(node, schema)).join("");
+  return renderChildren(doc.content, schema);
+}
+
+/**
+ * Marks of a node in a stable outer→inner order (`rank`, then schema
+ * registration order). A fixed order means `<mark><span style="color">` never flips
+ * to `<span style="color"><mark>` between renders, which used to make
+ * the DOM churn (and the caret jump) after every formatting change.
+ */
+function orderedMarks(node: DocumentNode, schema: CompiledSchema): Mark[] {
+  const order = Object.keys(schema.marks);
+  return (node.marks ?? [])
+    .filter((mark) => Boolean(schema.marks[mark.type]?.toDOM))
+    .sort(
+      (a, b) =>
+        (schema.marks[a.type].rank ?? 0) - (schema.marks[b.type].rank ?? 0) ||
+        order.indexOf(a.type) - order.indexOf(b.type),
+    );
+}
+
+function markKey(mark: Mark | undefined): string {
+  return mark ? `${mark.type}:${JSON.stringify(mark.attrs ?? {})}` : "";
+}
+
+/**
+ * Render sibling nodes, merging runs that share the same mark into one
+ * element: "a", "b" both highlighted render as `<mark>ab</mark>`, not
+ * `<mark>a</mark><mark>b</mark>` (which showed visible seams between the
+ * pieces of one highlight / background / outline).
+ */
+function renderChildren(
+  nodes: DocumentNode[],
+  schema: CompiledSchema,
+  depth = 0,
+): string {
+  let out = "";
+  let i = 0;
+  while (i < nodes.length) {
+    const mark = orderedMarks(nodes[i], schema)[depth];
+    if (!mark) {
+      out += renderNode(nodes[i], schema);
+      i += 1;
+      continue;
+    }
+    const key = markKey(mark);
+    let j = i + 1;
+    while (j < nodes.length && markKey(orderedMarks(nodes[j], schema)[depth]) === key) j += 1;
+    const inner = renderChildren(nodes.slice(i, j), schema, depth + 1);
+    out += wrapWithSpec(schema.marks[mark.type].toDOM!(mark), inner);
+    i = j;
+  }
+  return out;
 }
 
 function renderNode(node: DocumentNode, schema: CompiledSchema): string {
-  if (node.type === "text") {
-    let html = escapeHTML(node.text ?? "");
-    // Wrap text in mark elements, innermost first.
-    if (node.marks && node.marks.length > 0) {
-      for (const mark of node.marks) {
-        const spec = schema.marks[mark.type];
-        if (!spec?.toDOM) continue;
-        html = wrapWithSpec(spec.toDOM(mark), html);
-      }
-    }
-    return html;
-  }
+  // Marks are applied by renderChildren, which groups equal neighbours.
+  if (node.type === "text") return escapeHTML(node.text ?? "");
 
   const spec = schema.nodes[node.type];
   if (!spec?.toDOM) {
     // Unknown node — render children if any.
-    return (node.content ?? [])
-      .map((c) => renderNode(c, schema))
-      .join("");
+    return renderChildren(node.content ?? [], schema);
   }
 
-  let inner = (node.content ?? [])
-    .map((c) => renderNode(c, schema))
-    .join("");
+  let inner = renderChildren(node.content ?? [], schema);
 
   // An empty leaf block (a blank paragraph, an empty table cell) must
   // still render with a <br> inside it — otherwise the element

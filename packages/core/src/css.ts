@@ -213,3 +213,32 @@ function normaliseProtocols(protocols: readonly string[]): Set<string> {
       .filter(Boolean),
   );
 }
+
+const LIGHT_TEXT = "#ffffff";
+const DARK_TEXT = "#1a1a1f";
+
+function rgbChannels(color: string): [number, number, number] | null {
+  const hex = /^#([0-9a-f]{3,8})$/i.exec(color);
+  if (hex) {
+    const raw = hex[1];
+    const full = raw.length <= 4 ? raw.slice(0, 3).split("").map((c) => c + c).join("") : raw.slice(0, 6);
+    return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)) as [number, number, number];
+  }
+  const rgb = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i.exec(color);
+  return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null;
+}
+
+/**
+ * A text colour that stays readable on `fill`: white on dark fills,
+ * near-black on light ones (WCAG relative luminance). Formats it can't
+ * measure (named colours, hsl) get white.
+ */
+export function contrastTextColor(fill: string): string {
+  const rgb = rgbChannels(String(fill).trim());
+  if (!rgb) return LIGHT_TEXT;
+  const [r, g, b] = rgb.map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? DARK_TEXT : LIGHT_TEXT;
+}

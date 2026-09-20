@@ -101,6 +101,13 @@ export interface MarkSpec {
   parseDOM?: ParseRule[];
   /** If true, two adjacent marks of this type with same attrs merge. */
   inclusive?: boolean;
+  /**
+   * Nesting rank when several marks wrap the same text: a higher rank
+   * renders inside a lower one (default 0, ties keep schema order).
+   * Text colour sits inside fills, and underline / strike-through sit
+   * innermost so their line takes the colour of the text it decorates.
+   */
+  rank?: number;
 }
 
 /**
@@ -295,6 +302,12 @@ export interface EditorInstance {
 
   /** Mark / node state queries. */
   isActive(name: string, attrs?: Record<string, unknown>): boolean;
+  /**
+   * Attributes of the mark `name` applied to the whole selection (or the
+   * word under a bare caret) — e.g. `{ color: "#ef4444" }` for
+   * `text_color`. Null when the mark is absent or only partly applied.
+   */
+  getMarkAttributes(name: string): Record<string, unknown> | null;
 
   /** Event subscription. */
   on<E extends EditorEventName>(

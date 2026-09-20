@@ -43,7 +43,7 @@ import {
   AlignDropdown,
   // Color pickers (FullKit only)
   TextColorButton,
-  TextStrokeButton,
+  UnderlineColorButton,
   BackgroundColorButton,
   HighlightButton,
   // More (FullKit only)
@@ -597,10 +597,10 @@ export function App() {
                 {edition === "full" && (
                   <>
                     <ToolbarDivider />
-                    <HighlightButton />
                     <TextColorButton />
-                    <TextStrokeButton />
                     <BackgroundColorButton />
+                    <HighlightButton />
+                    <UnderlineColorButton />
                     <FontFamilyDropdown />
                     <FontSizeDropdown />
                     <LineHeightDropdown />
